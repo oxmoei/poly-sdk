@@ -698,138 +698,39 @@ for (const allowance of status.erc20Allowances) {
 }
 ```
 
-### ArbitrageService - Real-time Arbitrage Detection, Execution & Position Management
+### ArbitrageService - 套利服务
 
-Automated arbitrage monitoring using WebSocket for real-time orderbook updates, with built-in rebalancer and settlement features.
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  ArbitrageService 核心功能                                                    │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  1. 套利检测与执行                                                            │
-│     - Long Arb:  effectiveBuyYes + effectiveBuyNo < $1 → Merge              │
-│     - Short Arb: effectiveSellYes + effectiveSellNo > $1 → Sell             │
-│                                                                             │
-│  2. 自动再平衡 (Rebalancer)                                                   │
-│     - 保持 USDC 在设定范围内 (默认 20%-80%)                                     │
-│     - ⚠️ 关键: 保持 YES = NO (风险控制，避免方向性敞口)                          │
-│     - 自动 Split/Merge 调整仓位                                               │
-│     - Cooldown 机制防止过于频繁 (默认 30s)                                      │
-│                                                                             │
-│  ⚠️ 并行下单安全机制                                                          │
-│     - sizeSafetyFactor: 只用 80% 盘口深度，防止部分成交                          │
-│     - autoFixImbalance: 一边成功一边失败时，自动卖出多余代币                      │
-│                                                                             │
-│  3. 仓位清算 (Settle)                                                         │
-│     - 批量查看多市场持仓                                                       │
-│     - Merge 配对代币回收 USDC                                                 │
-│     - 追踪未配对代币 (等待市场结算后 redeem)                                     │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-#### 完整使用流程
+实时套利检测与执行，支持市场扫描、自动再平衡、智能清仓。
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  ArbitrageService 使用指南                                                    │
+│  核心功能                                                                     │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  Step 1: 准备资金                                                            │
-│  ─────────────────                                                          │
-│  • 确保钱包有 USDC.e (不是 native USDC!)                                      │
-│  • 使用 SwapService 将 USDC → USDC.e (如需要)                                 │
-│  • 使用 AuthorizationService 授权 CTF 合约                                    │
-│                                                                             │
-│  Step 2: 选择市场                                                            │
-│  ─────────────────                                                          │
-│  • 使用 GammaAPI 搜索高流动性市场                                              │
-│  • 获取 conditionId, yesTokenId, noTokenId                                  │
-│  • 检查市场是否 active 且 acceptingOrders                                     │
-│                                                                             │
-│  Step 3: 初始化服务                                                          │
-│  ─────────────────                                                          │
-│  • 配置 ArbitrageService (profit threshold, trade size, rebalancer)         │
-│  • 设置事件监听器 (opportunity, execution, rebalance)                         │
-│  • 调用 start(market) 开始监控                                               │
-│                                                                             │
-│  Step 4: 运行期间                                                            │
-│  ─────────────────                                                          │
-│  • 自动检测套利机会 (WebSocket 实时推送)                                        │
-│  • autoExecute=true 时自动执行                                               │
-│  • Rebalancer 自动维持仓位平衡                                                │
-│                                                                             │
-│  Step 5: 市场结束                                                            │
-│  ─────────────────                                                          │
-│  • 调用 stop() 停止监控                                                      │
-│  • 调用 settlePosition() 合并配对代币 → 回收 USDC                              │
-│  • 未配对代币等市场结算后使用 CTFClient.redeemByTokenIds()                       │
-│                                                                             │
+│  • scanMarkets()     - 扫描市场找套利机会                                      │
+│  • start(market)     - 启动实时监控 + 自动执行                                 │
+│  • clearPositions()  - 智能清仓 (活跃市场卖出, 已结算市场 redeem)                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  自动再平衡 (Rebalancer)                                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  套利需要 USDC + YES/NO Token，Rebalancer 自动维持资金比例：                    │
+│  • USDC 比例 < 20%  → 自动 Merge (YES+NO → USDC)                             │
+│  • USDC 比例 > 80%  → 自动 Split (USDC → YES+NO)                             │
+│  • 冷却机制：两次操作间隔 ≥ 30s，检测间隔 10s                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  执行安全 (Partial Fill Protection)                                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  套利需要同时买入 YES 和 NO，但订单可能部分成交：                                 │
+│  • sizeSafetyFactor=0.8 → 只使用 80% 的盘口深度，降低滑点风险                   │
+│  • autoFixImbalance=true → 如果只成交一侧，自动卖出多余的 token                 │
+│  • imbalanceThreshold=5 → YES-NO 差额超过 $5 时触发修复                        │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Step 1: 准备资金
-
-```typescript
-import {
-  SwapService,
-  AuthorizationService,
-  CTFClient
-} from '@catalyst-team/poly-sdk';
-
-// 1. 检查/转换 USDC.e
-const swapService = new SwapService(signer);
-const balances = await swapService.getBalances();
-console.log(`USDC.e: ${balances.find(b => b.symbol === 'USDC_E')?.balance}`);
-
-// 如果需要，将 native USDC 转为 USDC.e
-if (needSwap) {
-  await swapService.swap('USDC', 'USDC_E', '100');
-}
-
-// 2. 授权 CTF 合约
-const authService = new AuthorizationService(signer);
-const status = await authService.checkAllowances();
-if (!status.tradingReady) {
-  await authService.approveAll();
-}
-```
-
-#### Step 2: 选择市场
-
-```typescript
-import { GammaApiClient, ClobApiClient, RateLimiter } from '@catalyst-team/poly-sdk';
-
-const rateLimiter = new RateLimiter();
-const gammaApi = new GammaApiClient(rateLimiter);
-const clobApi = new ClobApiClient(rateLimiter);
-
-// 搜索高流动性市场
-const markets = await gammaApi.searchMarkets({
-  query: 'esports',
-  active: true,
-  closed: false,
-});
-
-// 选择一个市场
-const gammaMarket = markets[0];
-const clobMarket = await clobApi.getMarket(gammaMarket.conditionId);
-
-// 构建 market config
-const market = {
-  name: gammaMarket.question,
-  conditionId: gammaMarket.conditionId,
-  yesTokenId: clobMarket.tokens[0].tokenId,
-  noTokenId: clobMarket.tokens[1].tokenId,
-  outcomes: [clobMarket.tokens[0].outcome, clobMarket.tokens[1].outcome] as [string, string],
-};
-```
-
-#### Step 3-4: 初始化并运行
+#### 完整工作流
 
 ```typescript
 import { ArbitrageService } from '@catalyst-team/poly-sdk';
 
-// Initialize service with rebalancer
 const arbService = new ArbitrageService({
   privateKey: process.env.POLY_PRIVKEY,
   profitThreshold: 0.005,  // 0.5% minimum profit
@@ -866,92 +767,64 @@ arbService.on('rebalance', (result) => {
   console.log(`🔄 Rebalance: ${result.action.type} ${result.action.amount}`);
 });
 
-// Start monitoring
-await arbService.start(market);
+// ========== Step 1: 扫描市场 ==========
+const results = await arbService.scanMarkets({ minVolume24h: 5000 }, 0.005);
+console.log(`Found ${results.filter(r => r.arbType !== 'none').length} opportunities`);
 
-// Keep running...
-// When done:
+// 或者一键扫描+启动最佳市场
+const best = await arbService.findAndStart(0.005);
+if (!best) {
+  console.log('No arbitrage opportunities found');
+  process.exit(0);
+}
+console.log(`🎯 Started: ${best.market.name} (+${best.profitPercent.toFixed(2)}%)`);
+
+// ========== Step 2: 运行套利 ==========
+// 服务现在自动监控并执行套利...
+// 运行一段时间后:
+await new Promise(resolve => setTimeout(resolve, 60 * 60 * 1000)); // 1 hour
+
+// ========== Step 3: 停止并清算 ==========
 await arbService.stop();
-console.log(arbService.getStats());
+console.log('Stats:', arbService.getStats());
+
+// 智能清仓: 活跃市场 merge+sell, 已结算市场 redeem
+const clearResult = await arbService.clearPositions(best.market, true);
+console.log(`✅ Recovered: $${clearResult.totalUsdcRecovered.toFixed(2)}`);
 ```
 
-#### Step 5: 市场结束后清算
+#### 手动选择市场
 
 ```typescript
-// View position without executing
-const info = await arbService.settlePosition(market, false);
-console.log(`Paired tokens: ${info.pairedTokens} (can recover $${info.pairedTokens})`);
-console.log(`Unpaired YES: ${info.unpairedYes}`);
-console.log(`Unpaired NO: ${info.unpairedNo}`);
-
-// Execute merge to recover USDC
-const result = await arbService.settlePosition(market, true);
-if (result.merged) {
-  console.log(`Recovered: $${result.usdcRecovered} USDC`);
-}
-
-// For unpaired tokens, wait for market resolution then redeem
-// 使用 CTFClient.redeemByTokenIds() 在市场结算后兑换获胜代币
-```
-
-#### 手动模式 (Manual Execution)
-
-```typescript
-// Initialize without autoExecute
-const arbService = new ArbitrageService({
-  privateKey: process.env.POLY_PRIVKEY,
-  autoExecute: false,  // Manual mode
-  enableRebalancer: false,  // Manual rebalancing
-});
+// 如果不用 scanMarkets，可以手动构建 market config
+const market = {
+  name: 'Will BTC reach $100k?',
+  conditionId: '0x...',
+  yesTokenId: '12345...',
+  noTokenId: '67890...',
+  outcomes: ['Yes', 'No'] as [string, string],
+};
 
 await arbService.start(market);
-
-// Check for opportunity manually
-const opportunity = arbService.checkOpportunity();
-if (opportunity && opportunity.profitPercent > 1.0) {
-  // Execute with custom logic
-  const result = await arbService.execute(opportunity);
-  console.log(`Executed: ${result.success ? '✅' : '❌'}`);
-}
-
-// Manual rebalancing
-const action = arbService.calculateRebalanceAction();
-if (action.type !== 'none') {
-  const result = await arbService.rebalance(action);
-  console.log(`Rebalance: ${result.success ? '✅' : '❌'} ${result.action.type}`);
-}
 ```
 
-#### 批量清算多市场
+#### 批量清仓
 
 ```typescript
-// Define multiple markets
-const markets = [
-  { name: 'Market 1', conditionId: '0x...', yesTokenId: '...', noTokenId: '...' },
-  { name: 'Market 2', conditionId: '0x...', yesTokenId: '...', noTokenId: '...' },
-  { name: 'Market 3', conditionId: '0x...', yesTokenId: '...', noTokenId: '...' },
-];
-
-// View all positions (no execution)
-const results = await arbService.settleMultiple(markets, false);
-for (const r of results) {
-  console.log(`${r.market.name}: ${r.pairedTokens} pairs, ${r.unpairedYes} unpaired YES`);
-}
-
-// Execute merge for all markets
-const settleResults = await arbService.settleMultiple(markets, true);
-const totalRecovered = settleResults.reduce((sum, r) => sum + (r.usdcRecovered || 0), 0);
-console.log(`Total recovered: $${totalRecovered}`);
+// 多个市场一起清仓
+const markets = [market1, market2, market3];
+const results = await arbService.clearAllPositions(markets, true);
+const total = results.reduce((sum, r) => sum + r.totalUsdcRecovered, 0);
+console.log(`Total recovered: $${total.toFixed(2)}`);
 ```
 
-#### 仅监控模式 (Monitor-only, no wallet)
+#### 仅监控模式
 
 ```typescript
 // No private key = monitoring only, no execution
 const arbService = new ArbitrageService({
   profitThreshold: 0.003,
   enableLogging: true,
-  // No privateKey provided
 });
 
 arbService.on('opportunity', (opp) => {
@@ -1095,6 +968,12 @@ import type {
   RebalanceAction,
   RebalanceResult,
   SettleResult,
+  // ArbitrageService - Scanning
+  ScanCriteria,
+  ScanResult,
+  // ArbitrageService - Smart clearing
+  ClearPositionResult,
+  ClearAction,
 
   // Price Utils
   TickSize,

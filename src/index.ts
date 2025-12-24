@@ -75,6 +75,12 @@ export type {
   RebalanceResult,
   // Settle types
   SettleResult,
+  // Clear position types (smart settle)
+  ClearPositionResult,
+  ClearAction,
+  // Scanning types
+  ScanCriteria,
+  ScanResult,
 } from './services/arbitrage-service.js';
 
 // Trading

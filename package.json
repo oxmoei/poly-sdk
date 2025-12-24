@@ -28,9 +28,9 @@
     "example:trading": "tsx examples/08-trading-orders.ts",
     "example:rewards": "tsx examples/09-rewards-tracking.ts",
     "example:ctf": "tsx examples/10-ctf-operations.ts",
-    "example:arbitrage": "tsx examples/11-arbitrage-service.ts",
-    "example:live-arb": "tsx examples/12-live-arbitrage-scan.ts",
-    "example:trending-arb": "tsx examples/13-trending-arb-monitor.ts"
+    "example:live-arb": "tsx examples/11-live-arbitrage-scan.ts",
+    "example:trending-arb": "tsx examples/12-trending-arb-monitor.ts",
+    "example:arb-service": "tsx examples/13-arbitrage-service.ts"
   },
   "keywords": [
     "polymarket",

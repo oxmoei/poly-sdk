@@ -23,7 +23,10 @@ import { EventEmitter } from 'events';
 import { WebSocketManager } from '../clients/websocket-manager.js';
 import { CTFClient, type TokenIds } from '../clients/ctf-client.js';
 import { TradingClient } from '../clients/trading-client.js';
+import { GammaApiClient } from '../clients/gamma-api.js';
+import { ClobApiClient } from '../clients/clob-api.js';
 import { RateLimiter } from '../core/rate-limiter.js';
+import { createUnifiedCache } from '../core/unified-cache.js';
 import { getEffectivePrices } from '../utils/price-utils.js';
 import type { BookUpdate } from '../core/types.js';
 
@@ -109,6 +112,67 @@ export interface SettleResult {
   mergeTxHash?: string;
   usdcRecovered?: number;
   error?: string;
+}
+
+export interface ClearPositionResult {
+  market: ArbitrageMarketConfig;
+  marketStatus: 'active' | 'resolved' | 'unknown';
+  yesBalance: number;
+  noBalance: number;
+  actions: ClearAction[];
+  totalUsdcRecovered: number;
+  success: boolean;
+  error?: string;
+}
+
+export interface ClearAction {
+  type: 'merge' | 'sell_yes' | 'sell_no' | 'redeem';
+  amount: number;
+  usdcResult: number;
+  txHash?: string;
+  success: boolean;
+  error?: string;
+}
+
+// ===== Market Scanning Types =====
+
+export interface ScanCriteria {
+  /** Minimum 24h volume in USDC (default: 1000) */
+  minVolume24h?: number;
+  /** Maximum 24h volume (optional) */
+  maxVolume24h?: number;
+  /** Keywords to filter markets (optional) */
+  keywords?: string[];
+  /** Maximum number of markets to scan (default: 100) */
+  limit?: number;
+}
+
+export interface ScanResult {
+  /** Market config ready to use with start() */
+  market: ArbitrageMarketConfig;
+  /** Best arbitrage type */
+  arbType: 'long' | 'short' | 'none';
+  /** Profit rate (e.g., 0.01 = 1%) */
+  profitRate: number;
+  /** Profit percentage */
+  profitPercent: number;
+  /** Effective prices */
+  effectivePrices: {
+    buyYes: number;
+    buyNo: number;
+    sellYes: number;
+    sellNo: number;
+    longCost: number;
+    shortRevenue: number;
+  };
+  /** 24h volume */
+  volume24h: number;
+  /** Available size on orderbook */
+  availableSize: number;
+  /** Score 0-100 */
+  score: number;
+  /** Description */
+  description: string;
 }
 
 export interface OrderbookState {
@@ -795,6 +859,347 @@ export class ArbitrageService extends EventEmitter {
     return results;
   }
 
+  /**
+   * Clear all positions in a market using the best strategy
+   *
+   * Strategy:
+   * - Active market: Merge paired tokens → Sell remaining unpaired tokens
+   * - Resolved market: Redeem winning tokens
+   *
+   * @param market Market to clear positions from
+   * @param execute If true, execute the clearing. If false, just return info.
+   * @returns Result with all actions taken
+   *
+   * @example
+   * ```typescript
+   * const service = new ArbitrageService({ privateKey: '0x...' });
+   *
+   * // View clearing plan
+   * const plan = await service.clearPositions(market, false);
+   * console.log(`Will recover: $${plan.totalUsdcRecovered}`);
+   *
+   * // Execute clearing
+   * const result = await service.clearPositions(market, true);
+   * ```
+   */
+  async clearPositions(market: ArbitrageMarketConfig, execute = false): Promise<ClearPositionResult> {
+    if (!this.ctf) {
+      return {
+        market,
+        marketStatus: 'unknown',
+        yesBalance: 0,
+        noBalance: 0,
+        actions: [],
+        totalUsdcRecovered: 0,
+        success: false,
+        error: 'CTF client not configured',
+      };
+    }
+
+    const tokenIds: TokenIds = {
+      yesTokenId: market.yesTokenId,
+      noTokenId: market.noTokenId,
+    };
+
+    // Get token balances
+    const positions = await this.ctf.getPositionBalanceByTokenIds(market.conditionId, tokenIds);
+    const yesBalance = parseFloat(positions.yesBalance);
+    const noBalance = parseFloat(positions.noBalance);
+
+    if (yesBalance < 0.001 && noBalance < 0.001) {
+      this.log(`No positions to clear for ${market.name}`);
+      return {
+        market,
+        marketStatus: 'unknown',
+        yesBalance,
+        noBalance,
+        actions: [],
+        totalUsdcRecovered: 0,
+        success: true,
+      };
+    }
+
+    this.log(`\n🧹 Clearing positions: ${market.name}`);
+    this.log(`   YES: ${yesBalance.toFixed(6)}, NO: ${noBalance.toFixed(6)}`);
+
+    // Check if market is resolved
+    let marketStatus: 'active' | 'resolved' | 'unknown' = 'unknown';
+    let winningOutcome: 'YES' | 'NO' | undefined;
+
+    try {
+      const resolution = await this.ctf.getMarketResolution(market.conditionId);
+      marketStatus = resolution.isResolved ? 'resolved' : 'active';
+      winningOutcome = resolution.winningOutcome;
+      this.log(`   Status: ${marketStatus}${resolution.isResolved ? ` (Winner: ${winningOutcome})` : ''}`);
+    } catch {
+      // If we can't determine resolution, try to get market status from CLOB
+      try {
+        const cache = createUnifiedCache();
+        const clobApi = new ClobApiClient(this.rateLimiter, cache);
+        const clobMarket = await clobApi.getMarket(market.conditionId);
+        marketStatus = clobMarket.closed ? 'resolved' : 'active';
+        this.log(`   Status: ${marketStatus} (from CLOB)`);
+      } catch {
+        this.log(`   Status: unknown (assuming active)`);
+        marketStatus = 'active';
+      }
+    }
+
+    const actions: ClearAction[] = [];
+    let totalUsdcRecovered = 0;
+
+    if (!execute) {
+      // Dry run - calculate expected actions
+      if (marketStatus === 'resolved' && winningOutcome) {
+        // Resolved market: redeem winning tokens
+        const winningBalance = winningOutcome === 'YES' ? yesBalance : noBalance;
+        if (winningBalance >= 0.001) {
+          actions.push({
+            type: 'redeem',
+            amount: winningBalance,
+            usdcResult: winningBalance, // 1 USDC per winning token
+            success: true,
+          });
+          totalUsdcRecovered = winningBalance;
+        }
+      } else {
+        // Active market: merge + sell
+        const pairedTokens = Math.min(yesBalance, noBalance);
+        const unpairedYes = yesBalance - pairedTokens;
+        const unpairedNo = noBalance - pairedTokens;
+
+        if (pairedTokens >= 1) {
+          actions.push({
+            type: 'merge',
+            amount: pairedTokens,
+            usdcResult: pairedTokens,
+            success: true,
+          });
+          totalUsdcRecovered += pairedTokens;
+        }
+
+        // For unpaired tokens, estimate sell price (assume ~0.5 if unknown)
+        if (unpairedYes >= this.config.minTradeSize) {
+          const estimatedPrice = 0.5; // Conservative estimate
+          actions.push({
+            type: 'sell_yes',
+            amount: unpairedYes,
+            usdcResult: unpairedYes * estimatedPrice,
+            success: true,
+          });
+          totalUsdcRecovered += unpairedYes * estimatedPrice;
+        }
+
+        if (unpairedNo >= this.config.minTradeSize) {
+          const estimatedPrice = 0.5;
+          actions.push({
+            type: 'sell_no',
+            amount: unpairedNo,
+            usdcResult: unpairedNo * estimatedPrice,
+            success: true,
+          });
+          totalUsdcRecovered += unpairedNo * estimatedPrice;
+        }
+      }
+
+      this.log(`   📋 Plan: ${actions.length} actions, ~$${totalUsdcRecovered.toFixed(2)} USDC`);
+      for (const action of actions) {
+        this.log(`      - ${action.type}: ${action.amount.toFixed(4)} → ~$${action.usdcResult.toFixed(2)}`);
+      }
+
+      return {
+        market,
+        marketStatus,
+        yesBalance,
+        noBalance,
+        actions,
+        totalUsdcRecovered,
+        success: true,
+      };
+    }
+
+    // Execute clearing
+    this.log(`   🔄 Executing...`);
+
+    if (marketStatus === 'resolved' && winningOutcome) {
+      // Resolved market: redeem
+      const winningBalance = winningOutcome === 'YES' ? yesBalance : noBalance;
+      if (winningBalance >= 0.001) {
+        try {
+          const redeemResult = await this.ctf.redeem(market.conditionId);
+          actions.push({
+            type: 'redeem',
+            amount: winningBalance,
+            usdcResult: winningBalance,
+            txHash: redeemResult.txHash,
+            success: true,
+          });
+          totalUsdcRecovered = winningBalance;
+          this.log(`   ✅ Redeemed: ${winningBalance.toFixed(4)} tokens → $${winningBalance.toFixed(2)} USDC`);
+        } catch (error: any) {
+          actions.push({
+            type: 'redeem',
+            amount: winningBalance,
+            usdcResult: 0,
+            success: false,
+            error: error.message,
+          });
+          this.log(`   ❌ Redeem failed: ${error.message}`);
+        }
+      }
+    } else {
+      // Active market: merge + sell
+      const pairedTokens = Math.min(yesBalance, noBalance);
+      let unpairedYes = yesBalance - pairedTokens;
+      let unpairedNo = noBalance - pairedTokens;
+
+      // Step 1: Merge paired tokens
+      if (pairedTokens >= 1) {
+        const mergeAmount = Math.floor(pairedTokens * 1e6) / 1e6;
+        try {
+          const mergeResult = await this.ctf.mergeByTokenIds(
+            market.conditionId,
+            tokenIds,
+            mergeAmount.toString()
+          );
+          actions.push({
+            type: 'merge',
+            amount: mergeAmount,
+            usdcResult: mergeAmount,
+            txHash: mergeResult.txHash,
+            success: true,
+          });
+          totalUsdcRecovered += mergeAmount;
+          this.log(`   ✅ Merged: ${mergeAmount.toFixed(4)} pairs → $${mergeAmount.toFixed(2)} USDC`);
+        } catch (error: any) {
+          actions.push({
+            type: 'merge',
+            amount: mergeAmount,
+            usdcResult: 0,
+            success: false,
+            error: error.message,
+          });
+          this.log(`   ❌ Merge failed: ${error.message}`);
+          // Update unpaired amounts since merge failed
+          unpairedYes = yesBalance;
+          unpairedNo = noBalance;
+        }
+      }
+
+      // Step 2: Sell unpaired tokens
+      if (this.tradingClient && unpairedYes >= this.config.minTradeSize) {
+        try {
+          const sellAmount = Math.floor(unpairedYes * 1e6) / 1e6;
+          const result = await this.tradingClient.createMarketOrder({
+            tokenId: market.yesTokenId,
+            side: 'SELL',
+            amount: sellAmount,
+            orderType: 'FOK',
+          });
+          if (result.success) {
+            // Estimate USDC received (conservative estimate since we don't have exact trade info)
+            const usdcReceived = sellAmount * 0.5; // Assume ~0.5 average price
+            actions.push({
+              type: 'sell_yes',
+              amount: sellAmount,
+              usdcResult: usdcReceived,
+              success: true,
+            });
+            totalUsdcRecovered += usdcReceived;
+            this.log(`   ✅ Sold YES: ${sellAmount.toFixed(4)} → ~$${usdcReceived.toFixed(2)} USDC`);
+          } else {
+            throw new Error(result.errorMsg || 'Sell failed');
+          }
+        } catch (error: any) {
+          actions.push({
+            type: 'sell_yes',
+            amount: unpairedYes,
+            usdcResult: 0,
+            success: false,
+            error: error.message,
+          });
+          this.log(`   ❌ Sell YES failed: ${error.message}`);
+        }
+      }
+
+      if (this.tradingClient && unpairedNo >= this.config.minTradeSize) {
+        try {
+          const sellAmount = Math.floor(unpairedNo * 1e6) / 1e6;
+          const result = await this.tradingClient.createMarketOrder({
+            tokenId: market.noTokenId,
+            side: 'SELL',
+            amount: sellAmount,
+            orderType: 'FOK',
+          });
+          if (result.success) {
+            // Estimate USDC received (conservative estimate since we don't have exact trade info)
+            const usdcReceived = sellAmount * 0.5; // Assume ~0.5 average price
+            actions.push({
+              type: 'sell_no',
+              amount: sellAmount,
+              usdcResult: usdcReceived,
+              success: true,
+            });
+            totalUsdcRecovered += usdcReceived;
+            this.log(`   ✅ Sold NO: ${sellAmount.toFixed(4)} → ~$${usdcReceived.toFixed(2)} USDC`);
+          } else {
+            throw new Error(result.errorMsg || 'Sell failed');
+          }
+        } catch (error: any) {
+          actions.push({
+            type: 'sell_no',
+            amount: unpairedNo,
+            usdcResult: 0,
+            success: false,
+            error: error.message,
+          });
+          this.log(`   ❌ Sell NO failed: ${error.message}`);
+        }
+      }
+    }
+
+    const allSuccess = actions.every((a) => a.success);
+    this.log(`   📊 Result: ${actions.filter((a) => a.success).length}/${actions.length} succeeded, $${totalUsdcRecovered.toFixed(2)} recovered`);
+
+    const result: ClearPositionResult = {
+      market,
+      marketStatus,
+      yesBalance,
+      noBalance,
+      actions,
+      totalUsdcRecovered,
+      success: allSuccess,
+    };
+
+    this.emit('settle', result);
+    return result;
+  }
+
+  /**
+   * Clear positions from multiple markets
+   *
+   * @param markets Markets to clear
+   * @param execute If true, execute clearing
+   * @returns Results for all markets
+   */
+  async clearAllPositions(markets: ArbitrageMarketConfig[], execute = false): Promise<ClearPositionResult[]> {
+    const results: ClearPositionResult[] = [];
+    let totalRecovered = 0;
+
+    this.log(`\n🧹 Clearing positions from ${markets.length} markets...`);
+
+    for (const market of markets) {
+      const result = await this.clearPositions(market, execute);
+      results.push(result);
+      totalRecovered += result.totalUsdcRecovered;
+    }
+
+    this.log(`\n═══════════════════════════════════════`);
+    this.log(`TOTAL: $${totalRecovered.toFixed(2)} USDC ${execute ? 'recovered' : 'expected'}`);
+
+    return results;
+  }
+
   // ===== Private Methods =====
 
   private handleBookUpdate(update: BookUpdate): void {
@@ -1154,5 +1559,249 @@ export class ArbitrageService extends EventEmitter {
     if (this.config.enableLogging) {
       console.log(`[ArbitrageService] ${message}`);
     }
+  }
+
+  // ===== Market Scanning Methods =====
+
+  /**
+   * Scan markets for arbitrage opportunities
+   *
+   * @param criteria Filter criteria for markets
+   * @param minProfit Minimum profit threshold (default: 0.005 = 0.5%)
+   * @returns Array of scan results sorted by profit
+   *
+   * @example
+   * ```typescript
+   * const service = new ArbitrageService({ privateKey: '0x...' });
+   *
+   * // Scan markets with at least $5000 volume
+   * const results = await service.scanMarkets({ minVolume24h: 5000 }, 0.005);
+   *
+   * // Start arbitraging the best opportunity
+   * if (results.length > 0 && results[0].arbType !== 'none') {
+   *   await service.start(results[0].market);
+   * }
+   * ```
+   */
+  async scanMarkets(
+    criteria: ScanCriteria = {},
+    minProfit = 0.005
+  ): Promise<ScanResult[]> {
+    const {
+      minVolume24h = 1000,
+      maxVolume24h,
+      keywords = [],
+      limit = 100,
+    } = criteria;
+
+    this.log(`Scanning markets (minVolume: $${minVolume24h}, minProfit: ${(minProfit * 100).toFixed(2)}%)...`);
+
+    // Create temporary API clients for scanning
+    const cache = createUnifiedCache();
+    const gammaApi = new GammaApiClient(this.rateLimiter, cache);
+    const clobApi = new ClobApiClient(this.rateLimiter, cache);
+
+    // Fetch active markets from Gamma API
+    const markets = await gammaApi.getMarkets({
+      active: true,
+      closed: false,
+      limit,
+    });
+
+    this.log(`Found ${markets.length} active markets`);
+
+    const results: ScanResult[] = [];
+
+    for (const gammaMarket of markets) {
+      try {
+        // Filter by volume
+        const volume24h = gammaMarket.volume24hr || 0;
+        if (volume24h < minVolume24h) continue;
+        if (maxVolume24h && volume24h > maxVolume24h) continue;
+
+        // Filter by keywords
+        if (keywords.length > 0) {
+          const marketText = `${gammaMarket.question} ${gammaMarket.description || ''}`.toLowerCase();
+          const hasKeyword = keywords.some((kw) => marketText.includes(kw.toLowerCase()));
+          if (!hasKeyword) continue;
+        }
+
+        // Skip non-binary markets
+        if (!gammaMarket.conditionId || gammaMarket.outcomes?.length !== 2) continue;
+
+        // Get CLOB market data for token IDs
+        let clobMarket;
+        try {
+          clobMarket = await clobApi.getMarket(gammaMarket.conditionId);
+        } catch {
+          continue; // Skip if CLOB data not available
+        }
+
+        const yesToken = clobMarket.tokens.find((t) => t.outcome === 'Yes');
+        const noToken = clobMarket.tokens.find((t) => t.outcome === 'No');
+        if (!yesToken || !noToken) continue;
+
+        // Get orderbook data
+        let orderbook;
+        try {
+          orderbook = await clobApi.getProcessedOrderbook(gammaMarket.conditionId);
+        } catch {
+          continue; // Skip if orderbook not available
+        }
+
+        const { effectivePrices, longArbProfit, shortArbProfit } = orderbook.summary;
+
+        // Determine best arbitrage type
+        let arbType: 'long' | 'short' | 'none' = 'none';
+        let profitRate = 0;
+
+        if (longArbProfit > minProfit && longArbProfit >= shortArbProfit) {
+          arbType = 'long';
+          profitRate = longArbProfit;
+        } else if (shortArbProfit > minProfit) {
+          arbType = 'short';
+          profitRate = shortArbProfit;
+        }
+
+        // Calculate available size (min of both sides)
+        const yesAskSize = orderbook.yes.askSize || 0;
+        const noAskSize = orderbook.no.askSize || 0;
+        const yesBidSize = orderbook.yes.bidSize || 0;
+        const noBidSize = orderbook.no.bidSize || 0;
+
+        const availableSize = arbType === 'long'
+          ? Math.min(yesAskSize, noAskSize)
+          : Math.min(yesBidSize, noBidSize);
+
+        // Calculate score (profit * volume * available_size)
+        const score = profitRate * 100 * Math.log10(volume24h + 1) * Math.min(availableSize, 100) / 100;
+
+        // Create market config
+        const marketConfig: ArbitrageMarketConfig = {
+          name: gammaMarket.question.slice(0, 60) + (gammaMarket.question.length > 60 ? '...' : ''),
+          conditionId: gammaMarket.conditionId,
+          yesTokenId: yesToken.tokenId,
+          noTokenId: noToken.tokenId,
+          outcomes: gammaMarket.outcomes as [string, string],
+        };
+
+        const longCost = effectivePrices.effectiveBuyYes + effectivePrices.effectiveBuyNo;
+        const shortRevenue = effectivePrices.effectiveSellYes + effectivePrices.effectiveSellNo;
+
+        let description: string;
+        if (arbType === 'long') {
+          description = `Buy YES@${effectivePrices.effectiveBuyYes.toFixed(4)} + NO@${effectivePrices.effectiveBuyNo.toFixed(4)} = ${longCost.toFixed(4)} → Merge for $1`;
+        } else if (arbType === 'short') {
+          description = `Sell YES@${effectivePrices.effectiveSellYes.toFixed(4)} + NO@${effectivePrices.effectiveSellNo.toFixed(4)} = ${shortRevenue.toFixed(4)}`;
+        } else {
+          description = `No opportunity (Long cost: ${longCost.toFixed(4)}, Short rev: ${shortRevenue.toFixed(4)})`;
+        }
+
+        results.push({
+          market: marketConfig,
+          arbType,
+          profitRate,
+          profitPercent: profitRate * 100,
+          effectivePrices: {
+            buyYes: effectivePrices.effectiveBuyYes,
+            buyNo: effectivePrices.effectiveBuyNo,
+            sellYes: effectivePrices.effectiveSellYes,
+            sellNo: effectivePrices.effectiveSellNo,
+            longCost,
+            shortRevenue,
+          },
+          volume24h,
+          availableSize,
+          score,
+          description,
+        });
+      } catch (error) {
+        // Skip markets with errors
+        continue;
+      }
+    }
+
+    // Sort by profit (descending), then by score
+    results.sort((a, b) => {
+      if (b.profitRate !== a.profitRate) return b.profitRate - a.profitRate;
+      return b.score - a.score;
+    });
+
+    this.log(`Found ${results.filter((r) => r.arbType !== 'none').length} markets with arbitrage opportunities`);
+
+    return results;
+  }
+
+  /**
+   * Quick scan for best arbitrage opportunities
+   *
+   * @param minProfit Minimum profit threshold (default: 0.005 = 0.5%)
+   * @param limit Maximum number of results to return (default: 10)
+   * @returns Top arbitrage opportunities
+   *
+   * @example
+   * ```typescript
+   * const service = new ArbitrageService({ privateKey: '0x...' });
+   *
+   * // Find best arbitrage opportunities
+   * const top = await service.quickScan(0.005, 5);
+   *
+   * // Print results
+   * for (const r of top) {
+   *   console.log(`${r.market.name}: ${r.arbType} +${r.profitPercent.toFixed(2)}%`);
+   * }
+   *
+   * // Start the best one
+   * if (top.length > 0) {
+   *   await service.start(top[0].market);
+   * }
+   * ```
+   */
+  async quickScan(minProfit = 0.005, limit = 10): Promise<ScanResult[]> {
+    const results = await this.scanMarkets(
+      { minVolume24h: 5000, limit: 100 },
+      minProfit
+    );
+
+    // Return only markets with opportunities, limited to requested count
+    return results
+      .filter((r) => r.arbType !== 'none')
+      .slice(0, limit);
+  }
+
+  /**
+   * Find and start arbitraging the best opportunity
+   *
+   * @param minProfit Minimum profit threshold (default: 0.005 = 0.5%)
+   * @returns The scan result that was started, or null if none found
+   *
+   * @example
+   * ```typescript
+   * const service = new ArbitrageService({
+   *   privateKey: '0x...',
+   *   autoExecute: true,
+   *   profitThreshold: 0.005,
+   * });
+   *
+   * // Find and start the best opportunity
+   * const started = await service.findAndStart(0.005);
+   * if (started) {
+   *   console.log(`Started: ${started.market.name} (+${started.profitPercent.toFixed(2)}%)`);
+   * }
+   * ```
+   */
+  async findAndStart(minProfit = 0.005): Promise<ScanResult | null> {
+    const results = await this.quickScan(minProfit, 1);
+
+    if (results.length === 0) {
+      this.log('No arbitrage opportunities found');
+      return null;
+    }
+
+    const best = results[0];
+    this.log(`Best opportunity: ${best.market.name} (${best.arbType} +${best.profitPercent.toFixed(2)}%)`);
+
+    await this.start(best.market);
+    return best;
   }
 }
