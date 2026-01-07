@@ -13,12 +13,12 @@ import { ethers, BigNumber } from 'ethers';
 // 配置
 // ============================================
 
-const RPC_URL = 'https://hidden-flashy-lake.matic.quiknode.pro/e9f1f5a2067043a81ba3c9e7abecb61508892888/';
+const RPC_URL = process.env.RPC_URL || 'https://polygon-rpc.com';
 const CHAIN_ID = 137;
 
 const CTF_CONTRACT = '0x4D97DCd97eC945f40cF65F87097ACe5EA0476045';
 const USDC_E_CONTRACT = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174';
-const SAFE_ADDRESS = '0x58d2ff253998bc2f3b8f5bdbe9c52cad7b022739';
+const SAFE_ADDRESS = process.env.SAFE_ADDRESS || '';
 
 // Gas 倍数 - 相对于网络当前 gas price
 const GAS_MULTIPLIER = 3;
@@ -72,9 +72,9 @@ async function main() {
   const compromisedKey = process.env.COMPROMISED_KEY;
   const safeKey = process.env.SAFE_KEY;
 
-  if (!compromisedKey || !safeKey) {
+  if (!compromisedKey || !safeKey || !SAFE_ADDRESS) {
     console.error('\n请设置环境变量:');
-    console.error('COMPROMISED_KEY=0x... SAFE_KEY=0x... npx tsx scripts/rescue/rescue-erc1155.ts');
+    console.error('COMPROMISED_KEY=0x... SAFE_KEY=0x... SAFE_ADDRESS=0x... npx tsx scripts/rescue/rescue-erc1155.ts');
     process.exit(1);
   }
 

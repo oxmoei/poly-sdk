@@ -4,11 +4,11 @@
 
 import { ethers, BigNumber } from 'ethers';
 
-const RPC_URL = 'https://polygon-rpc.com';
+const RPC_URL = process.env.RPC_URL || 'https://polygon-rpc.com';
 const CHAIN_ID = 137;
 const CTF_CONTRACT = '0x4D97DCd97eC945f40cF65F87097ACe5EA0476045';
 const USDC_E_CONTRACT = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174';
-const SAFE_ADDRESS = '0x58d2ff253998bc2f3b8f5bdbe9c52cad7b022739';
+const SAFE_ADDRESS = process.env.SAFE_ADDRESS || '';
 const GAS_PRICE = ethers.utils.parseUnits('500', 'gwei');  // 10x normal
 
 const TOKENS = [
@@ -36,8 +36,9 @@ async function main() {
   const compromisedKey = process.env.COMPROMISED_KEY;
   const safeKey = process.env.SAFE_KEY;
 
-  if (!compromisedKey || !safeKey) {
-    console.error('请设置: COMPROMISED_KEY=0x... SAFE_KEY=0x... npx tsx ...');
+  if (!compromisedKey || !safeKey || !SAFE_ADDRESS) {
+    console.error('请设置环境变量:');
+    console.error('  COMPROMISED_KEY=0x... SAFE_KEY=0x... SAFE_ADDRESS=0x... npx tsx ...');
     process.exit(1);
   }
 
@@ -48,15 +49,8 @@ async function main() {
   console.log(`\n被盗钱包: ${compromisedWallet.address}`);
   console.log(`安全钱包: ${safeWallet.address}`);
 
-  // 验证钱包地址
-  const expectedCompromised = '0xed1050F19F2D5890FF29c2f7416de97e68069171';
-  if (compromisedWallet.address.toLowerCase() !== expectedCompromised.toLowerCase()) {
-    console.error(`\n❌ 被盗钱包地址不匹配!`);
-    console.error(`   期望: ${expectedCompromised}`);
-    console.error(`   实际: ${compromisedWallet.address}`);
-    process.exit(1);
-  }
-  console.log('✅ 被盗钱包地址验证通过');
+  // 显示钱包地址（移除硬编码验证）
+  console.log('✅ 钱包已加载');
 
   // 获取 token 余额
   const ctfContract = new ethers.Contract(CTF_CONTRACT, ERC1155_ABI, provider);

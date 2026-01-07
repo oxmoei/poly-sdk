@@ -16,15 +16,15 @@ import { ethers, BigNumber } from 'ethers';
 // 配置
 // ============================================
 
-const RPC_URL = 'https://polygon-rpc.com';
+const RPC_URL = process.env.RPC_URL || 'https://polygon-rpc.com';
 const CHAIN_ID = 137;
 
 // 合约地址
 const CTF_CONTRACT = '0x4D97DCd97eC945f40cF65F87097ACe5EA0476045';
 const USDC_E_CONTRACT = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174';
 
-// 目标地址（救回资金的去向）
-const SAFE_ADDRESS = '0x58d2ff253998bc2f3b8f5bdbe9c52cad7b022739';
+// 目标地址（救回资金的去向）- 必须通过环境变量设置
+const SAFE_ADDRESS = process.env.SAFE_ADDRESS || '';
 
 // Gas 价格策略
 const HIGH_GAS_PRICE = ethers.utils.parseUnits('200000', 'gwei');  // 200k gwei for POL competition
@@ -108,10 +108,11 @@ async function main() {
   const compromisedKey = process.env.COMPROMISED_KEY;
   const safeKey = process.env.SAFE_KEY;
 
-  if (!compromisedKey || !safeKey) {
+  if (!compromisedKey || !safeKey || !SAFE_ADDRESS) {
     console.error('请设置环境变量:');
     console.error('  COMPROMISED_KEY - 被盗钱包私钥');
     console.error('  SAFE_KEY - 安全钱包私钥 (用于发送 MATIC)');
+    console.error('  SAFE_ADDRESS - 资金转移目标地址');
     process.exit(1);
   }
 

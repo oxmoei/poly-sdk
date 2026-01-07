@@ -6,11 +6,11 @@
 
 import { ethers } from 'ethers';
 
-const RPC_URL = 'https://polygon-rpc.com';
+const RPC_URL = process.env.RPC_URL || 'https://polygon-rpc.com';
 const CTF_CONTRACT = '0x4D97DCd97eC945f40cF65F87097ACe5EA0476045';
 
-// 被盗钱包地址
-const COMPROMISED_ADDRESS = '0xed1050F19F2D5890FF29c2f7416de97e68069171';
+// 钱包地址 - 通过环境变量设置
+const WALLET_ADDRESS = process.env.WALLET_ADDRESS || '';
 
 // 需要检查的 token IDs
 const TOKEN_IDS = [
@@ -43,6 +43,13 @@ async function main() {
   console.log('验证 CTF 合约 ERC-1155 功能');
   console.log('='.repeat(60));
 
+  if (!WALLET_ADDRESS) {
+    console.error('请设置环境变量: WALLET_ADDRESS=0x...');
+    process.exit(1);
+  }
+
+  console.log(`\n检查钱包: ${WALLET_ADDRESS}`);
+
   const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
   const ctfContract = new ethers.Contract(CTF_CONTRACT, ERC1155_ABI, provider);
 
@@ -59,7 +66,7 @@ async function main() {
   console.log('\n2. 检查 token 余额...');
   for (const tokenId of TOKEN_IDS) {
     try {
-      const balance = await ctfContract.balanceOf(COMPROMISED_ADDRESS, tokenId);
+      const balance = await ctfContract.balanceOf(WALLET_ADDRESS, tokenId);
       const balanceFormatted = ethers.utils.formatUnits(balance, 6);
       console.log(`   Token ${tokenId.slice(0, 20)}...: ${balanceFormatted} 份`);
     } catch (e) {
@@ -70,7 +77,7 @@ async function main() {
   // 3. 批量查询余额
   console.log('\n3. 批量查询余额...');
   try {
-    const accounts = TOKEN_IDS.map(() => COMPROMISED_ADDRESS);
+    const accounts = TOKEN_IDS.map(() => WALLET_ADDRESS);
     const balances = await ctfContract.balanceOfBatch(accounts, TOKEN_IDS);
     console.log('   批量查询成功! ✅');
     balances.forEach((balance: ethers.BigNumber, i: number) => {
