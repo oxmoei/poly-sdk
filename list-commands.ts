@@ -402,18 +402,13 @@ const printExamples = () => {
     items.forEach((ex) => {
       const authBadge = ex.auth ? warning('🔐 需私钥') : success('✅ 无需认证');
       const pnpmCmd = `pnpm example:${ex.name}`;
-
-      // 对套利相关示例，优先推荐使用 production 版本
-      let tsxCmd: string;
-      if (ex.name === 'arb-service') {
-        tsxCmd = 'npx tsx examples/production/arbitrage-service.ts';
-      } else if (ex.name === 'trending-arb') {
-        tsxCmd = 'npx tsx examples/production/arbitrage-monitor.ts';
-      } else {
-        tsxCmd = `npx tsx examples/${ex.file}`;
-      }
+      const tsxCmd = `npx tsx examples/${ex.file}`;
       
-      console.log(`  ${bold(`[${ex.id}]`)} ${info(ex.description)}`);
+      // 对生产级示例添加标识
+      const isProduction = ex.id === '12' || ex.id === '13';
+      const productionBadge = isProduction ? info('🚀 生产级') : '';
+      
+      console.log(`  ${bold(`[${ex.id}]`)} ${info(ex.description)} ${productionBadge}`);
       console.log(`    ${dim('命令:')} ${bold(pnpmCmd)}`);
       console.log(`    ${dim('或:')}    ${dim(tsxCmd)}`);
       console.log(`    ${authBadge}`);
@@ -421,7 +416,7 @@ const printExamples = () => {
     });
   });
  
-  console.log(dim('提示: 使用 pnpm example:<name> 或 npx tsx examples/<file> 运行示例；对于套利相关示例，推荐使用 examples/production 下的生产版本\n'));
+  console.log(dim('提示: 使用 pnpm example:<name> 或 npx tsx examples/<file> 运行示例；示例 12-13 为生产级版本，包含完整的错误处理、日志和监控功能\n'));
 };
 
 // 打印 Scripts
@@ -458,9 +453,9 @@ const printQuickReference = () => {
     console.log(`  ${bold(`pnpm example:${ex.name.padEnd(20)}`)} ${dim('//')} ${ex.description}`);
   });
 
-  console.log('\n' + bold('Production 示例（套利相关，推荐使用）:'));
-  console.log(`  ${bold('npx tsx examples/production/arbitrage-service.ts')}   ${dim('// 生产级套利服务（带交易限额与监控）')}`);
-  console.log(`  ${bold('npx tsx examples/production/arbitrage-monitor.ts')}  ${dim('// 生产级套利监控（只读）')}`);
+  console.log('\n' + bold('生产级 Examples（推荐）:'));
+  console.log(`  ${bold('npx tsx examples/12-trending-arb-monitor.ts')}          ${dim('// 生产级套利监控（只读）')}`);
+  console.log(`  ${bold('npx tsx examples/13-arbitrage-service.ts')}             ${dim('// 生产级套利服务（带交易限额与监控）')}`);
 
   console.log('\n' + bold('常用 Scripts:'));
   console.log(`  ${bold('npx tsx scripts/wallet/check-wallet-balances.ts')}     ${dim('// 检查钱包余额')}`);
