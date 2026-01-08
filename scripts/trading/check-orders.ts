@@ -5,9 +5,9 @@
 import { TradingService, RateLimiter, createUnifiedCache } from '../../src/index.js';
 
 async function main() {
-  const privateKey = process.env.POLY_PRIVKEY || process.env.PRIVATE_KEY;
+  const privateKey = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVKEY || process.env.PRIVATE_KEY;
   if (!privateKey) {
-    console.error('❌ 没有配置私钥');
+    console.error('❌ 没有配置私钥 (请设置 POLYMARKET_PRIVATE_KEY)');
     process.exit(1);
   }
 

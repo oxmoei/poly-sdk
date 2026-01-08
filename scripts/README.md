@@ -7,14 +7,16 @@ Utility scripts for testing and operating with Polymarket.
 Set environment variable:
 
 ```bash
-export POLY_PRIVKEY=0x...  # Your private key
+export POLYMARKET_PRIVATE_KEY=0x...  # Your private key
 ```
 
 Or pass inline:
 
 ```bash
-POLY_PRIVKEY=0x... npx tsx scripts/...
+POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/...
 ```
+
+**Note:** For backward compatibility, some scripts may also accept `POLY_PRIVKEY` or `PRIVATE_KEY`, but `POLYMARKET_PRIVATE_KEY` is the recommended standard.
 
 ---
 

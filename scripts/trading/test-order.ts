@@ -5,7 +5,7 @@
  * 测试 GTC 限价单 vs FOK 市价单的区别
  *
  * Usage:
- *   POLY_PRIVKEY=0x... npx tsx scripts/trading/test-order.ts
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/trading/test-order.ts
  */
 
 import { TradingService, RateLimiter, createUnifiedCache } from '../../src/index.js';
@@ -16,11 +16,17 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Read private key from dashboard-api .env
+// Read private key from dashboard-api .env (backward compatibility)
 const envPath = path.resolve(__dirname, '../../earning-engine/dashboard-api/.env');
-const envContent = fs.readFileSync(envPath, 'utf8');
-const match = envContent.match(/^PRIVATE_KEY=(.+)$/m);
-const PRIVATE_KEY = process.env.POLY_PRIVKEY || (match ? match[1].trim() : '');
+let envContent = '';
+let match: RegExpMatchArray | null = null;
+try {
+  envContent = fs.readFileSync(envPath, 'utf8');
+  match = envContent.match(/^PRIVATE_KEY=(.+)$/m);
+} catch {
+  // File doesn't exist, ignore
+}
+const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVKEY || (match ? match[1].trim() : '');
 
 // 使用一个活跃的市场进行测试 - NVIDIA market cap
 const TEST_MARKET = {
@@ -34,7 +40,7 @@ const TEST_AMOUNT = 5; // 5 USDC 测试 (Polymarket 最小订单量是 5 份)
 
 async function main() {
   if (!PRIVATE_KEY) {
-    console.error('Error: Set POLY_PRIVKEY environment variable');
+    console.error('Error: Set POLYMARKET_PRIVATE_KEY environment variable');
     process.exit(1);
   }
 

@@ -15,7 +15,7 @@
  * - Real on-chain transactions with real funds
  *
  * Environment:
- *   PRIVATE_KEY - Private key (from .env file)
+ *   POLYMARKET_PRIVATE_KEY - Private key (from .env file or environment)
  *   POLYGON_RPC_URL - Optional RPC URL (default: https://polygon-rpc.com)
  *
  * Run with:
@@ -44,7 +44,7 @@ config({ path: path.resolve(process.cwd(), '.env') });
 
 // ===== Configuration =====
 
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
+const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.PRIVATE_KEY;
 const RPC_URL = process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com';
 const TEST_AMOUNT = '5'; // $5 for safety
 const MIN_MATIC_BALANCE = 0.01; // Minimum MATIC for gas

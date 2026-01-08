@@ -14,14 +14,21 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Read private key
-const envPath = path.resolve(__dirname, '../../earning-engine/dashboard-api/.env');
-const envContent = fs.readFileSync(envPath, 'utf8');
-const match = envContent.match(/^PRIVATE_KEY=(.+)$/m);
-const PRIVATE_KEY = match ? match[1].trim() : '';
+// Read private key from environment or dashboard-api .env (backward compatibility)
+let PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.PRIVATE_KEY;
+if (!PRIVATE_KEY) {
+  try {
+    const envPath = path.resolve(__dirname, '../../earning-engine/dashboard-api/.env');
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    const match = envContent.match(/^PRIVATE_KEY=(.+)$/m);
+    PRIVATE_KEY = match ? match[1].trim() : '';
+  } catch {
+    // File doesn't exist, ignore
+  }
+}
 
 if (!PRIVATE_KEY) {
-  console.error('PRIVATE_KEY not found');
+  console.error('POLYMARKET_PRIVATE_KEY not found');
   process.exit(1);
 }
 

@@ -15,7 +15,7 @@
  * - Profit: Total cost < $1 means guaranteed profit at settlement
  *
  * Environment variables:
- *   POLY_PRIVKEY - Private key for trading (required for execution)
+ *   POLYMARKET_PRIVATE_KEY - Private key for trading (required for execution)
  *
  * Run with:
  *   pnpm example:dip-arb
@@ -42,10 +42,10 @@ async function main() {
   console.log('╚════════════════════════════════════════════════════════════════╝');
   console.log();
 
-  const privateKey = process.env.POLY_PRIVKEY;
+  const privateKey = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVKEY;
 
   if (!privateKey && !MONITOR_ONLY) {
-    console.log('No POLY_PRIVKEY provided. Running in monitor-only mode.\n');
+    console.log('No POLYMARKET_PRIVATE_KEY provided. Running in monitor-only mode.\n');
   }
 
   // ========== Initialize SDK ==========

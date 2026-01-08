@@ -5,7 +5,7 @@
  * This will send real transactions!
  *
  * Usage:
- *   PRIVATE_KEY=0x... npx tsx scripts/test-approve-trading.ts
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/test-approve-trading.ts
  */
 
 import { ethers } from 'ethers';
@@ -14,10 +14,10 @@ import { AuthorizationService } from '../src/index.js';
 
 dotenv.config();
 
-const PRIVATE_KEY = process.env.POLY_PRIVATE_KEY || process.env.PRIVATE_KEY;
+const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVATE_KEY || process.env.PRIVATE_KEY;
 
 if (!PRIVATE_KEY) {
-  console.error('❌ Error: No private key found.');
+  console.error('❌ Error: No private key found. Set POLYMARKET_PRIVATE_KEY');
   process.exit(1);
 }
 

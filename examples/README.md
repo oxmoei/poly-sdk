@@ -137,7 +137,7 @@ Track liquidity provider rewards using `TradingService`.
 On-chain token operations (requires private key + USDC.e).
 
 ```bash
-POLY_PRIVKEY=0x... npx tsx examples/10-ctf-operations.ts
+POLYMARKET_PRIVATE_KEY=0x... npx tsx examples/10-ctf-operations.ts
 ```
 
 **Critical:** Uses USDC.e (not native USDC):

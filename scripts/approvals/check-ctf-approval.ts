@@ -5,13 +5,13 @@
  * Without CTF token approval, orders fail with "not enough balance / allowance".
  *
  * Usage:
- *   POLY_PRIVKEY=0x... npx tsx scripts/check-ctf-approval.ts
- *   POLY_PRIVKEY=0x... npx tsx scripts/check-ctf-approval.ts approve
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/check-ctf-approval.ts
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/check-ctf-approval.ts approve
  */
 
 import { ethers } from 'ethers';
 
-const PRIVATE_KEY = process.env.POLY_PRIVKEY || '';
+const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVKEY || '';
 const RPC_URL = process.env.POLYGON_RPC_URL || 'https://polygon-mainnet.g.alchemy.com/v2/demo';
 
 // Contracts
@@ -33,7 +33,7 @@ const ERC1155_ABI = [
 
 async function main() {
   if (!PRIVATE_KEY) {
-    console.error('Error: Set POLY_PRIVKEY environment variable');
+    console.error('Error: Set POLYMARKET_PRIVATE_KEY environment variable');
     process.exit(1);
   }
 
@@ -151,7 +151,7 @@ async function main() {
     console.log('  check   - Check current approvals (default)');
     console.log('  approve - Approve all contracts for trading');
     console.log('');
-    console.log('Example: POLY_PRIVKEY=0x... npx tsx scripts/check-ctf-approval.ts approve');
+    console.log('Example: POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/check-ctf-approval.ts approve');
   }
 }
 

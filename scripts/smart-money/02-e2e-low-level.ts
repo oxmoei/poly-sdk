@@ -47,8 +47,9 @@ async function main() {
   console.log('  2. 测量完整链路延迟\n');
 
   // Check for private key
-  if (!process.env.PRIVATE_KEY) {
-    console.error('❌ PRIVATE_KEY not found in .env');
+  const privateKey = process.env.POLYMARKET_PRIVATE_KEY || process.env.PRIVATE_KEY;
+  if (!privateKey) {
+    console.error('❌ POLYMARKET_PRIVATE_KEY not found in .env');
     process.exit(1);
   }
 
@@ -66,7 +67,7 @@ async function main() {
   const rateLimiter = new RateLimiter();
   const realtime = new RealtimeServiceV2();
   const trading = new TradingService(rateLimiter, cache, {
-    privateKey: process.env.PRIVATE_KEY,
+    privateKey: privateKey,
     chainId: 137,
   });
 

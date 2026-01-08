@@ -9,7 +9,7 @@
  * 4. Stop and clear positions
  *
  * Environment variables:
- *   POLY_PRIVKEY - Private key for trading (optional for scan-only mode)
+ *   POLYMARKET_PRIVATE_KEY - Private key for trading (optional for scan-only mode)
  *
  * Run with:
  *   pnpm example:arb-service
@@ -31,10 +31,10 @@ async function main() {
   console.log('╚════════════════════════════════════════════════════════════════╝');
   console.log();
 
-  const privateKey = process.env.POLY_PRIVKEY;
+  const privateKey = process.env.POLYMARKET_PRIVATE_KEY;
 
   if (!privateKey && !SCAN_ONLY) {
-    console.log('No POLY_PRIVKEY provided. Running in scan-only mode.\n');
+    console.log('No POLYMARKET_PRIVATE_KEY provided. Running in scan-only mode.\n');
   }
 
   // ========== Initialize ArbitrageService ==========

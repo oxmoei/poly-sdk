@@ -80,12 +80,12 @@ const CLI_ARGS = parseArgs();
 const SELECTED_COIN = CLI_ARGS.coin;
 
 // Config
-const PRIVATE_KEY = process.env.PRIVATE_KEY || '';
+const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.PRIVATE_KEY || '';
 const MONITOR_DURATION_MS = 60 * 60 * 1000; // 1 hour
 const LOG_DIR = '/tmp/dip-arb-logs';
 
 if (!PRIVATE_KEY) {
-  console.error('Error: PRIVATE_KEY environment variable is required');
+  console.error('Error: POLYMARKET_PRIVATE_KEY environment variable is required');
   process.exit(1);
 }
 

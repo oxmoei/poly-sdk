@@ -21,7 +21,7 @@
  * - YES ≠ NO 时，卖出多余的一方来平衡
  *
  * 用法:
- *   POLY_PRIVKEY=0x... npx tsx scripts/v2/token-rebalancer.ts [options]
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/v2/token-rebalancer.ts [options]
  *
  * Options:
  *   --condition <id>       Condition ID
@@ -109,9 +109,9 @@ import {
     console.log();
   
     // Initialize clients
-    const privateKey = process.env.POLY_PRIVKEY;
+    const privateKey = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVKEY;
     if (!privateKey) {
-      console.error('Error: POLY_PRIVKEY environment variable is required');
+      console.error('Error: POLYMARKET_PRIVATE_KEY environment variable is required');
       process.exit(1);
     }
   

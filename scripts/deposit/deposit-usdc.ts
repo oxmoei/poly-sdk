@@ -5,16 +5,16 @@
  * before you can place orders.
  *
  * Usage:
- *   POLY_PRIVKEY=0x... npx tsx scripts/deposit-usdc.ts [amount]
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/deposit-usdc.ts [amount]
  *
  * Examples:
- *   POLY_PRIVKEY=0x... npx tsx scripts/deposit-usdc.ts 100    # Deposit 100 USDC
- *   POLY_PRIVKEY=0x... npx tsx scripts/deposit-usdc.ts        # Check balance only
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/deposit-usdc.ts 100    # Deposit 100 USDC
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/deposit-usdc.ts        # Check balance only
  */
 
 import { ethers } from 'ethers';
 
-const PRIVATE_KEY = process.env.POLY_PRIVKEY || '';
+const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVKEY || '';
 
 // Contract addresses on Polygon
 const USDC_E_ADDRESS = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174';
@@ -38,7 +38,7 @@ const EXCHANGE_ABI = [
 
 async function main() {
   if (!PRIVATE_KEY) {
-    console.error('Error: Set POLY_PRIVKEY environment variable');
+    console.error('Error: Set POLYMARKET_PRIVATE_KEY environment variable');
     process.exit(1);
   }
 
@@ -95,7 +95,7 @@ async function main() {
   if (amount <= 0) {
     console.log('─── Usage ───');
     console.log('To deposit USDC, run with an amount:');
-    console.log('  POLY_PRIVKEY=0x... npx tsx scripts/deposit-usdc.ts 100');
+    console.log('  POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/deposit-usdc.ts 100');
     console.log('');
     console.log('Note: Polymarket uses a proxy wallet system. You may need to:');
     console.log('1. Visit polymarket.com and connect your wallet');

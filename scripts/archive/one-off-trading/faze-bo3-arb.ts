@@ -8,9 +8,9 @@
  * - Rebalancer 自动补充 tokens，确保随时有流动性
  *
  * Usage:
- *   POLY_PRIVKEY=0x... npx tsx scripts/v2/faze-bo3-arb.ts
- *   POLY_PRIVKEY=0x... npx tsx scripts/v2/faze-bo3-arb.ts --auto-execute
- *   POLY_PRIVKEY=0x... npx tsx scripts/v2/faze-bo3-arb.ts --auto-execute --threshold 0.003
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/v2/faze-bo3-arb.ts
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/v2/faze-bo3-arb.ts --auto-execute
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/v2/faze-bo3-arb.ts --auto-execute --threshold 0.003
  */
 
 import {
@@ -38,7 +38,7 @@ import {
   // CONFIGURATION
   // ═══════════════════════════════════════════════════════════════════════════════
   
-  const PRIVATE_KEY = process.env.POLY_PRIVKEY || process.env.POLYMARKET_PRIVATE_KEY || '';
+  const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVKEY || '';
   const RPC_URL = process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com';
   
   const args = process.argv.slice(2);

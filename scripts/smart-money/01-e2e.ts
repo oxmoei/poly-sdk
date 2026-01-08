@@ -33,8 +33,9 @@ async function main() {
   console.log('='.repeat(60));
 
   // Check for private key
-  if (!process.env.PRIVATE_KEY) {
-    console.error('❌ PRIVATE_KEY not found in .env');
+  const privateKey = process.env.POLYMARKET_PRIVATE_KEY || process.env.PRIVATE_KEY;
+  if (!privateKey) {
+    console.error('❌ POLYMARKET_PRIVATE_KEY not found in .env');
     process.exit(1);
   }
 
@@ -47,7 +48,7 @@ async function main() {
   const walletService = new WalletService(dataApi, subgraph, cache);
   const realtimeService = new RealtimeServiceV2();
   const tradingService = new TradingService(rateLimiter, cache, {
-    privateKey: process.env.PRIVATE_KEY,
+    privateKey: privateKey,
     chainId: 137,
   });
 

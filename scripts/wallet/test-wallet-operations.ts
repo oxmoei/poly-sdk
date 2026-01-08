@@ -8,8 +8,8 @@
  * - Swap operations (dry run)
  *
  * Usage:
- *   POLY_PRIVATE_KEY=0x... npx tsx scripts/test-wallet-operations.ts
- *   Or set PRIVATE_KEY in .env file
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/test-wallet-operations.ts
+ *   Or set PRIVATE_KEY in .env file (backward compatibility)
  */
 
 import { ethers } from 'ethers';
@@ -22,11 +22,11 @@ import {
 
 dotenv.config();
 
-const PRIVATE_KEY = process.env.POLY_PRIVATE_KEY || process.env.PRIVATE_KEY;
+const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVATE_KEY || process.env.PRIVATE_KEY;
 
 if (!PRIVATE_KEY) {
   console.error('❌ Error: No private key found.');
-  console.error('   Set POLY_PRIVATE_KEY or PRIVATE_KEY in environment or .env file');
+  console.error('   Set POLYMARKET_PRIVATE_KEY in environment or .env file');
   process.exit(1);
 }
 

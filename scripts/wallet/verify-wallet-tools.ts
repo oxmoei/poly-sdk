@@ -8,13 +8,13 @@
  *
  * Usage:
  *   npx tsx scripts/verify-wallet-tools.ts
- *   POLY_PRIVKEY=0x... npx tsx scripts/verify-wallet-tools.ts
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/verify-wallet-tools.ts
  */
 
 import { Wallet, providers } from 'ethers';
 import { BridgeClient, AuthorizationService } from '../src/index.js';
 
-const PRIVATE_KEY = process.env.POLY_PRIVKEY || process.env.POLY_PRIVATE_KEY;
+const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVKEY || process.env.POLY_PRIVATE_KEY;
 const RPC_URL = 'https://polygon-rpc.com';
 
 async function main() {
@@ -66,7 +66,7 @@ async function main() {
   // Test 3: Check Allowances (requires private key)
   console.log('─── Test 3: AuthorizationService.checkAllowances() ───');
   if (!PRIVATE_KEY) {
-    console.log('⚠️  Skipped: Set POLY_PRIVKEY to test allowance checking');
+    console.log('⚠️  Skipped: Set POLYMARKET_PRIVATE_KEY to test allowance checking');
   } else {
     try {
       const provider = new providers.JsonRpcProvider(RPC_URL);

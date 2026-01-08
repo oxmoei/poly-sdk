@@ -10,9 +10,9 @@ async function testProviderFix() {
   console.log('Testing provider fix...\n');
 
   // Simulate a signer without provider (like what SDK returns)
-  const privateKey = process.env.POLY_PRIVATE_KEY;
+  const privateKey = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVATE_KEY;
   if (!privateKey) {
-    console.error('POLY_PRIVATE_KEY not set');
+    console.error('POLYMARKET_PRIVATE_KEY not set');
     process.exit(1);
   }
 

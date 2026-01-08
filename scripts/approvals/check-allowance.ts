@@ -3,19 +3,19 @@
  *
  * Usage:
  *   # Check current allowance
- *   POLY_PRIVKEY=0x... npx tsx scripts/check-allowance.ts
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/check-allowance.ts
  *
  *   # Approve unlimited allowance
- *   POLY_PRIVKEY=0x... npx tsx scripts/check-allowance.ts approve
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/check-allowance.ts approve
  */
 
 import { TradingService, RateLimiter, createUnifiedCache } from '../../src/index.js';
 
-const PRIVATE_KEY = process.env.POLY_PRIVKEY || '';
+const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVKEY || '';
 
 async function main() {
   if (!PRIVATE_KEY) {
-    console.error('Error: Set POLY_PRIVKEY environment variable');
+    console.error('Error: Set POLYMARKET_PRIVATE_KEY environment variable');
     process.exit(1);
   }
 
@@ -123,7 +123,7 @@ async function main() {
     console.log('  check   - Check current allowance (default)');
     console.log('  approve - Approve unlimited allowance for trading');
     console.log('');
-    console.log('Example: POLY_PRIVKEY=0x... npx tsx scripts/check-allowance.ts approve');
+    console.log('Example: POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/check-allowance.ts approve');
   }
 }
 

@@ -9,14 +9,14 @@
  *
  * 用法:
  *   # 查看持仓
- *   POLY_PRIVKEY=0x... npx tsx scripts/v2/settle-position.ts
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/v2/settle-position.ts
  *
  *   # 执行 merge
- *   POLY_PRIVKEY=0x... npx tsx scripts/v2/settle-position.ts --merge
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/v2/settle-position.ts --merge
  *
  *   # 指定市场
- *   POLY_PRIVKEY=0x... npx tsx scripts/v2/settle-position.ts --merge --market map1
- *   POLY_PRIVKEY=0x... npx tsx scripts/v2/settle-position.ts --merge --market bo3
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/v2/settle-position.ts --merge --market map1
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/v2/settle-position.ts --merge --market bo3
  */
 
 import { CTFClient } from '../../src/index.js';
@@ -59,7 +59,7 @@ const EXECUTE_MERGE = args.includes('--merge');
 const marketIdx = args.indexOf('--market');
 const MARKET_KEY = marketIdx !== -1 ? args[marketIdx + 1] : 'all';
 
-const PRIVATE_KEY = process.env.POLY_PRIVKEY || '';
+const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVKEY || '';
 const RPC_URL = process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com';
 
 // ============== Main ==============
@@ -70,7 +70,7 @@ async function main() {
   console.log();
 
   if (!PRIVATE_KEY) {
-    console.error('Error: POLY_PRIVKEY environment variable is required');
+    console.error('Error: POLYMARKET_PRIVATE_KEY environment variable is required');
     process.exit(1);
   }
 

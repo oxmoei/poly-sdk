@@ -8,17 +8,17 @@
  *
  * Usage:
  *   # Check deposit address and balances only
- *   POLY_PRIVKEY=0x... npx tsx scripts/deposit-native-usdc.ts check
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/deposit-native-usdc.ts check
  *
  *   # Deposit Native USDC (amount in USDC, e.g., 5.0)
- *   POLY_PRIVKEY=0x... npx tsx scripts/deposit-native-usdc.ts deposit 5.0
+ *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/deposit-native-usdc.ts deposit 5.0
  */
 
 import { providers, Wallet, Contract, utils } from 'ethers';
 import { BridgeClient, BRIDGE_TOKENS } from '../src/clients/bridge-client.js';
 
 // Configuration
-const PRIVATE_KEY = process.env.POLY_PRIVKEY || process.env.POLYMARKET_PRIVATE_KEY || '';
+const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVKEY || '';
 const RPC_URL = process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com';
 
 // Token addresses
@@ -40,11 +40,11 @@ async function main() {
   const amount = args[1] || '5.0';
 
   if (!PRIVATE_KEY) {
-    console.log('Error: Set POLY_PRIVKEY or POLYMARKET_PRIVATE_KEY environment variable');
+    console.log('Error: Set POLYMARKET_PRIVATE_KEY environment variable');
     console.log('');
     console.log('Usage:');
-    console.log('  POLY_PRIVKEY=0x... npx tsx scripts/deposit-native-usdc.ts check');
-    console.log('  POLY_PRIVKEY=0x... npx tsx scripts/deposit-native-usdc.ts deposit 5.0');
+    console.log('  POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/deposit-native-usdc.ts check');
+    console.log('  POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/deposit-native-usdc.ts deposit 5.0');
     return;
   }
 

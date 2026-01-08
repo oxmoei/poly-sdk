@@ -21,9 +21,9 @@ async function main() {
   console.log('🤖 Auto Copy Trading - Simplified API');
   console.log('='.repeat(60));
 
-  const privateKey = process.env.PRIVATE_KEY || process.env.POLY_PRIVATE_KEY;
+  const privateKey = process.env.POLYMARKET_PRIVATE_KEY || process.env.PRIVATE_KEY || process.env.POLY_PRIVATE_KEY;
   if (!privateKey) {
-    console.error('❌ PRIVATE_KEY not found');
+    console.error('❌ POLYMARKET_PRIVATE_KEY not found');
     process.exit(1);
   }
 

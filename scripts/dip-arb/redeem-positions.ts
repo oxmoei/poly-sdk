@@ -10,7 +10,7 @@
 
 import { PolymarketSDK, CTFClient } from '../../src/index.js';
 
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
+const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.PRIVATE_KEY;
 
 // Normalize outcome names: Up/Yes = YES, Down/No = NO
 function normalizeOutcome(outcome: string): 'YES' | 'NO' {
@@ -39,7 +39,7 @@ async function main() {
   console.log('');
 
   if (!PRIVATE_KEY) {
-    console.error('Error: PRIVATE_KEY environment variable is required');
+    console.error('Error: POLYMARKET_PRIVATE_KEY environment variable is required');
     process.exit(1);
   }
 
