@@ -17,19 +17,19 @@ async function main() {
   const address = process.argv[2] || TEST_ADDRESS;
 
   console.log('╔════════════════════════════════════════════════════════════╗');
-  console.log('║          POLYGON WALLET BALANCE CHECKER                     ║');
+  console.log('║               Polygon 钱包余额检查器                        ║');
   console.log('╚════════════════════════════════════════════════════════════╝');
   console.log('');
-  console.log(`Wallet: ${address}`);
+  console.log(`钱包: ${address}`);
   console.log('');
 
-  console.log('Fetching balances...');
+  console.log('正在获取余额...');
   console.log('');
 
   try {
     const balances = await SwapService.getWalletBalances(address);
 
-    console.log('─── Token Balances ───');
+    console.log('─── 代币余额 ───');
     console.log('');
 
     for (const b of balances) {
@@ -43,14 +43,14 @@ async function main() {
     const zeroBalances = balances.filter((b) => parseFloat(b.balance) === 0);
     if (zeroBalances.length > 0) {
       console.log('');
-      console.log(`  (Zero balance: ${zeroBalances.map((b) => b.symbol).join(', ')})`);
+      console.log(`  (零余额: ${zeroBalances.map((b) => b.symbol).join(', ')})`);
     }
 
     // Summary
     console.log('');
-    console.log('─── Summary ───');
+    console.log('─── 摘要 ───');
     const nonZero = balances.filter((b) => parseFloat(b.balance) > 0);
-    console.log(`  Tokens with balance: ${nonZero.length}`);
+    console.log(`  有余额的代币: ${nonZero.length}`);
 
     // Calculate stablecoin value
     let stablecoinValue = 0;
@@ -59,14 +59,14 @@ async function main() {
         stablecoinValue += parseFloat(b.balance);
       }
     }
-    console.log(`  Stablecoin value: $${stablecoinValue.toFixed(2)}`);
+    console.log(`  稳定币价值: $${stablecoinValue.toFixed(2)}`);
 
     console.log('');
-    console.log('─── Supported Tokens ───');
+    console.log('─── 支持的代币 ───');
     console.log(`  ${Object.keys(POLYGON_TOKENS).join(', ')}`);
 
   } catch (err) {
-    console.error(`Error: ${err instanceof Error ? err.message : err}`);
+    console.error(`错误: ${err instanceof Error ? err.message : err}`);
   }
 
   console.log('');

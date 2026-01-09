@@ -12,50 +12,50 @@
 import { PolymarketSDK, RealtimeServiceV2 } from '../src/index.js';
 
 async function main() {
-  console.log('=== Real-time WebSocket Demo (V2) ===\n');
+  console.log('=== 实时 WebSocket 演示 (V2) ===\n');
 
   const sdk = new PolymarketSDK();
 
   // 1. Get a trending market to subscribe to
-  console.log('1. Getting trending market...');
+  console.log('1. 正在获取热门市场...');
   const trendingMarkets = await sdk.markets.getTrendingMarkets(1);
   if (trendingMarkets.length === 0) {
-    console.log('No trending markets found');
+    console.log('未找到热门市场');
     return;
   }
 
   const market = trendingMarkets[0];
-  console.log(`   Market: ${market.question.slice(0, 60)}...`);
-  console.log(`   Condition ID: ${market.conditionId}\n`);
+  console.log(`   市场: ${market.question.slice(0, 60)}...`);
+  console.log(`   条件 ID: ${market.conditionId}\n`);
 
   // 2. Get market details for token IDs
-  console.log('2. Getting market details...');
+  console.log('2. 正在获取市场详情...');
   const unifiedMarket = await sdk.markets.getMarket(market.conditionId);
   const yesToken = unifiedMarket.tokens.find(t => t.outcome === 'Yes');
   const noToken = unifiedMarket.tokens.find(t => t.outcome === 'No');
   const yesTokenId = yesToken?.tokenId || '';
   const noTokenId = noToken?.tokenId || '';
-  console.log(`   YES Token: ${yesTokenId.slice(0, 20)}...`);
-  console.log(`   NO Token: ${noTokenId.slice(0, 20)}...`);
-  console.log(`   Current YES Price: ${yesToken?.price}`);
-  console.log(`   Current NO Price: ${noToken?.price}\n`);
+  console.log(`   是 代币: ${yesTokenId.slice(0, 20)}...`);
+  console.log(`   否 代币: ${noTokenId.slice(0, 20)}...`);
+  console.log(`   当前是 价格: ${yesToken?.price}`);
+  console.log(`   当前否 价格: ${noToken?.price}\n`);
 
   if (!yesTokenId || !noTokenId) {
-    console.log('No token IDs available for this market');
+    console.log('此市场无可用代币 ID');
     return;
   }
 
   // 3. Create RealtimeServiceV2 and connect
-  console.log('3. Connecting to WebSocket...');
+  console.log('3. 正在连接到 WebSocket...');
   const realtime = new RealtimeServiceV2({ debug: false });
 
   // Wait for connection
   await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('Connection timeout')), 10000);
+    const timeout = setTimeout(() => reject(new Error('连接超时')), 10000);
 
     realtime.once('connected', () => {
       clearTimeout(timeout);
-      console.log('   Connected!\n');
+      console.log('   已连接!\n');
       resolve();
     });
 
@@ -63,48 +63,48 @@ async function main() {
   });
 
   // 4. Subscribe to market data
-  console.log('4. Subscribing to market updates...');
+  console.log('4. 正在订阅市场更新...');
   let updateCount = 0;
   const maxUpdates = 10;
 
   const subscription = realtime.subscribeMarket(yesTokenId, noTokenId, {
     onOrderbook: (book) => {
       updateCount++;
-      const side = book.assetId === yesTokenId ? 'YES' : 'NO';
+      const side = book.assetId === yesTokenId ? '是' : '否';
       const bestBid = book.bids[0];
       const bestAsk = book.asks[0];
-      console.log(`   [${new Date().toLocaleTimeString()}] ${side} Book: Bid ${bestBid?.price.toFixed(4)} (${bestBid?.size.toFixed(0)}) | Ask ${bestAsk?.price.toFixed(4)} (${bestAsk?.size.toFixed(0)})`);
+      console.log(`   [${new Date().toLocaleTimeString()}] ${side} 订单簿: 买 ${bestBid?.price.toFixed(4)} (${bestBid?.size.toFixed(0)}) | 卖 ${bestAsk?.price.toFixed(4)} (${bestAsk?.size.toFixed(0)})`);
     },
     onPriceUpdate: (update) => {
-      const side = update.assetId === yesTokenId ? 'YES' : 'NO';
-      console.log(`   [${new Date().toLocaleTimeString()}] ${side} Price: ${update.price.toFixed(4)} (mid: ${update.midpoint.toFixed(4)}, spread: ${update.spread.toFixed(4)})`);
+      const side = update.assetId === yesTokenId ? '是' : '否';
+      console.log(`   [${new Date().toLocaleTimeString()}] ${side} 价格: ${update.price.toFixed(4)} (中间价: ${update.midpoint.toFixed(4)}, 价差: ${update.spread.toFixed(4)})`);
     },
     onLastTrade: (trade) => {
-      const side = trade.assetId === yesTokenId ? 'YES' : 'NO';
-      console.log(`   [${new Date().toLocaleTimeString()}] ${side} Trade: ${trade.side} ${trade.size} @ ${trade.price.toFixed(4)}`);
+      const side = trade.assetId === yesTokenId ? '是' : '否';
+      console.log(`   [${new Date().toLocaleTimeString()}] ${side} 交易: ${trade.side} ${trade.size} @ ${trade.price.toFixed(4)}`);
     },
     onPairUpdate: (update) => {
       const spread = update.spread;
-      const arbSignal = spread < 0.99 ? 'ARB!' : spread > 1.01 ? 'ARB!' : 'OK';
-      console.log(`   [${new Date().toLocaleTimeString()}] PAIR: YES ${update.yes.price.toFixed(4)} + NO ${update.no.price.toFixed(4)} = ${spread.toFixed(4)} [${arbSignal}]`);
+      const arbSignal = spread < 0.99 ? '套利!' : spread > 1.01 ? '套利!' : '正常';
+      console.log(`   [${new Date().toLocaleTimeString()}] 配对: 是 ${update.yes.price.toFixed(4)} + 否 ${update.no.price.toFixed(4)} = ${spread.toFixed(4)} [${arbSignal}]`);
     },
     onError: (error) => {
-      console.error(`   Error: ${error.message}`);
+      console.error(`   错误: ${error.message}`);
     },
   });
 
-  console.log(`   Subscription ID: ${subscription.id}`);
-  console.log(`   Subscribed to: ${subscription.tokenIds.length} tokens`);
-  console.log(`\n   Waiting for updates (max ${maxUpdates})...\n`);
+  console.log(`   订阅 ID: ${subscription.id}`);
+  console.log(`   已订阅: ${subscription.tokenIds.length} 个代币`);
+  console.log(`\n   等待更新 (最多 ${maxUpdates} 个)...\n`);
 
   // 5. Optionally subscribe to crypto prices (BTC, ETH)
-  console.log('5. Subscribing to crypto prices...');
+  console.log('5. 正在订阅加密货币价格...');
   const cryptoSub = realtime.subscribeCryptoPrices(['BTCUSDT', 'ETHUSDT'], {
     onPrice: (price) => {
       console.log(`   [${new Date().toLocaleTimeString()}] ${price.symbol}: $${price.price.toFixed(2)}`);
     },
   });
-  console.log(`   Crypto subscription ID: ${cryptoSub.id}\n`);
+  console.log(`   加密货币订阅 ID: ${cryptoSub.id}\n`);
 
   // 6. Wait for some updates
   await new Promise<void>((resolve) => {
@@ -123,21 +123,21 @@ async function main() {
   });
 
   // 7. Check cached prices
-  console.log('\n6. Cached prices:');
+  console.log('\n6. 缓存价格:');
   const prices = realtime.getAllPrices();
   for (const [assetId, price] of prices) {
-    const side = assetId === yesTokenId ? 'YES' : 'NO';
+    const side = assetId === yesTokenId ? '是' : '否';
     console.log(`   ${side}: ${price.price.toFixed(4)}`);
   }
 
   // 8. Cleanup
-  console.log('\n7. Cleaning up...');
+  console.log('\n7. 正在清理...');
   subscription.unsubscribe();
   cryptoSub.unsubscribe();
   realtime.disconnect();
-  console.log('   Disconnected');
+  console.log('   已断开连接');
 
-  console.log('\n=== Done ===');
+  console.log('\n=== 完成 ===');
 }
 
 main().catch(console.error);

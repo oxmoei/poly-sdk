@@ -30,7 +30,7 @@ import {
 const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || '0xYOUR_PRIVATE_KEY_HERE';
 
 async function main() {
-  console.log('=== Polymarket Trading Examples (TradingService) ===\n');
+  console.log('=== Polymarket 交易示例 (TradingService) ===\n');
 
   // Initialize SDK and TradingService
   const sdk = new PolymarketSDK();

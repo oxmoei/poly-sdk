@@ -49,7 +49,7 @@ const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || '0xYOUR_PRIVATE_KEY_HE
 const RPC_URL = process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com';
 
 async function main() {
-  console.log('=== Polymarket CTF Operations ===\n');
+  console.log('=== Polymarket CTF 操作示例 ===\n');
 
   // Check if private key is set
   if (PRIVATE_KEY === '0xYOUR_PRIVATE_KEY_HERE') {

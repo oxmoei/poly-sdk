@@ -25,7 +25,7 @@ if (!PRIVATE_KEY) {
 }
 
 if (!PRIVATE_KEY) {
-  console.error('Error: POLYMARKET_PRIVATE_KEY not found in environment or .env');
+  console.error('错误: 未在环境变量或 .env 文件中找到 POLYMARKET_PRIVATE_KEY');
   process.exit(1);
 }
 
@@ -46,7 +46,7 @@ const ERC20_ABI = [
 
 async function main() {
   console.log('╔════════════════════════════════════════════════════════════════╗');
-  console.log('║       POLYMARKET ALLOWANCE CHECKER (ALL CONTRACTS)              ║');
+  console.log('║          Polymarket 授权检查器 (所有合约)                       ║');
   console.log('╚════════════════════════════════════════════════════════════════╝');
   console.log('');
 
@@ -63,31 +63,31 @@ async function main() {
       const p = new ethers.providers.JsonRpcProvider(rpcUrl);
       await p.getNetwork(); // Test connection
       provider = p;
-      console.log(`Using RPC: ${rpcUrl}`);
+      console.log(`使用 RPC: ${rpcUrl}`);
       break;
     } catch (e) {
-      console.log(`RPC failed: ${rpcUrl}`);
+      console.log(`RPC 失败: ${rpcUrl}`);
     }
   }
 
   if (!provider) {
-    console.error('All RPC providers failed!');
+    console.error('所有 RPC 提供商都失败了!');
     process.exit(1);
   }
   const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
   const address = wallet.address;
   const usdc = new ethers.Contract(USDC_E_ADDRESS, ERC20_ABI, wallet);
 
-  console.log(`Wallet: ${address}`);
+  console.log(`钱包: ${address}`);
   console.log('');
 
   // Check USDC balance
   const balance = await usdc.balanceOf(address);
-  console.log(`USDC.e Balance: ${(parseFloat(balance.toString()) / 1e6).toFixed(6)} USDC`);
+  console.log(`USDC.e 余额: ${(parseFloat(balance.toString()) / 1e6).toFixed(6)} USDC`);
   console.log('');
 
   // Check all allowances
-  console.log('─── Contract Allowances ───');
+  console.log('─── 合约授权 ───');
 
   const contracts = [
     { name: 'CTF Exchange', address: CTF_EXCHANGE },
@@ -112,45 +112,45 @@ async function main() {
   console.log('');
 
   if (needsApproval.length > 0) {
-    console.log('─── Approval Needed ───');
-    console.log('The following contracts need unlimited approval:');
+    console.log('─── 需要授权 ───');
+    console.log('以下合约需要无限授权:');
     for (const contract of needsApproval) {
       console.log(`  - ${contract.name} (${contract.address})`);
     }
     console.log('');
-    console.log('Run with --approve flag to approve all:');
+    console.log('使用 --approve 参数来授权所有合约:');
     console.log('  npx tsx scripts/check-all-allowances.ts --approve');
     console.log('');
 
     if (process.argv.includes('--approve')) {
-      console.log('─── Approving Contracts ───');
+      console.log('─── 正在授权合约 ───');
       const MAX_UINT256 = ethers.constants.MaxUint256;
 
       // Get current gas price and add buffer for Polygon
       const gasPrice = await provider.getGasPrice();
       const adjustedGasPrice = gasPrice.mul(150).div(100); // 1.5x current gas price
-      console.log(`Using gas price: ${(adjustedGasPrice.toNumber() / 1e9).toFixed(2)} Gwei`);
+      console.log(`使用 Gas 价格: ${(adjustedGasPrice.toNumber() / 1e9).toFixed(2)} Gwei`);
 
       for (const contract of needsApproval) {
-        console.log(`Approving ${contract.name}...`);
+        console.log(`正在授权 ${contract.name}...`);
         try {
           const tx = await usdc.approve(contract.address, MAX_UINT256, { gasPrice: adjustedGasPrice });
-          console.log(`  TX: ${tx.hash}`);
+          console.log(`  交易: ${tx.hash}`);
           await tx.wait();
-          console.log(`  ✓ Approved`);
+          console.log(`  ✓ 已授权`);
         } catch (error: any) {
-          console.log(`  ✗ Failed: ${error.message}`);
+          console.log(`  ✗ 失败: ${error.message}`);
         }
       }
       console.log('');
-      console.log('✅ Done! Please re-run without --approve to verify.');
+      console.log('✅ 完成! 请重新运行（不带 --approve）以验证。');
     }
   } else {
-    console.log('✅ All contracts have unlimited approval!');
+    console.log('✅ 所有合约都已获得无限授权!');
     console.log('');
-    console.log('If orders are still failing, the issue may be:');
-    console.log('1. Polymarket requires a deposit via their UI to create a trading account');
-    console.log('2. Or there may be a different issue with the API key');
+    console.log('如果订单仍然失败，可能的原因:');
+    console.log('1. Polymarket 需要通过其 UI 进行充值以创建交易账户');
+    console.log('2. 或者 API 密钥可能存在其他问题');
   }
 }
 

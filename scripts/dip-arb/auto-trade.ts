@@ -85,7 +85,7 @@ const MONITOR_DURATION_MS = 60 * 60 * 1000; // 1 hour
 const LOG_DIR = '/tmp/dip-arb-logs';
 
 if (!PRIVATE_KEY) {
-  console.error('Error: POLYMARKET_PRIVATE_KEY environment variable is required');
+  console.error('错误: 需要设置 POLYMARKET_PRIVATE_KEY 环境变量');
   process.exit(1);
 }
 

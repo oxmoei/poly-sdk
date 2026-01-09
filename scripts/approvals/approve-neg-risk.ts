@@ -25,7 +25,7 @@ if (!PRIVATE_KEY) {
 }
 
 if (!PRIVATE_KEY) {
-  console.error('POLYMARKET_PRIVATE_KEY not found');
+  console.error('未找到 POLYMARKET_PRIVATE_KEY');
   process.exit(1);
 }
 
@@ -38,7 +38,7 @@ const ERC20_ABI = [
 ];
 
 async function main() {
-  console.log('Approving Neg Risk Adapter...');
+  console.log('正在授权 Neg Risk Adapter...');
 
   // Try multiple RPCs
   const rpcs = [
@@ -48,7 +48,7 @@ async function main() {
   ];
 
   for (const rpc of rpcs) {
-    console.log(`\nTrying RPC: ${rpc}`);
+    console.log(`\n尝试 RPC: ${rpc}`);
     try {
       const provider = new ethers.providers.JsonRpcProvider({
         url: rpc,
@@ -57,52 +57,52 @@ async function main() {
 
       // Test connection
       const network = await provider.getNetwork();
-      console.log(`Connected to chain ${network.chainId}`);
+      console.log(`已连接到链 ${network.chainId}`);
 
       const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
-      console.log(`Wallet: ${wallet.address}`);
+      console.log(`钱包: ${wallet.address}`);
 
       const usdc = new ethers.Contract(USDC_E, ERC20_ABI, wallet);
 
       // Check current allowance
       const currentAllowance = await usdc.allowance(wallet.address, NEG_RISK_ADAPTER);
-      console.log(`Current allowance: ${ethers.utils.formatUnits(currentAllowance, 6)} USDC`);
+      console.log(`当前授权: ${ethers.utils.formatUnits(currentAllowance, 6)} USDC`);
 
       if (currentAllowance.gt(ethers.utils.parseUnits('1000000000', 6))) {
-        console.log('✅ Already approved!');
+        console.log('✅ 已授权!');
         return;
       }
 
       // Get gas price
       const gasPrice = await provider.getGasPrice();
       const adjustedGas = gasPrice.mul(2); // 2x for safety
-      console.log(`Gas price: ${ethers.utils.formatUnits(adjustedGas, 'gwei')} Gwei`);
+      console.log(`Gas 价格: ${ethers.utils.formatUnits(adjustedGas, 'gwei')} Gwei`);
 
       // Approve
-      console.log('Sending approval transaction...');
+      console.log('正在发送授权交易...');
       const tx = await usdc.approve(NEG_RISK_ADAPTER, ethers.constants.MaxUint256, {
         gasPrice: adjustedGas,
         gasLimit: 100000,
       });
 
-      console.log(`TX Hash: ${tx.hash}`);
-      console.log('Waiting for confirmation...');
+      console.log(`交易哈希: ${tx.hash}`);
+      console.log('等待确认...');
 
       const receipt = await tx.wait();
-      console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
+      console.log(`✅ 已在区块 ${receipt.blockNumber} 确认`);
 
       // Verify
       const newAllowance = await usdc.allowance(wallet.address, NEG_RISK_ADAPTER);
-      console.log(`New allowance: Unlimited`);
+      console.log(`新授权: 无限`);
 
       return;
     } catch (error: any) {
-      console.log(`Failed: ${error.message}`);
+      console.log(`失败: ${error.message}`);
     }
   }
 
-  console.log('\n❌ All RPCs failed!');
-  console.log('Please approve manually on Polygonscan:');
+  console.log('\n❌ 所有 RPC 都失败了!');
+  console.log('请在 Polygonscan 上手动授权:');
   console.log('https://polygonscan.com/token/0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174#writeContract');
 }
 

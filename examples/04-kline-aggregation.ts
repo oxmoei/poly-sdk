@@ -64,71 +64,71 @@ function aggregateToKLines(trades: Trade[], interval: KLineInterval): KLineCandl
 }
 
 async function main() {
-  console.log('=== K-Line Aggregation from Trade Data ===\n');
+  console.log('=== K线聚合示例（从交易数据） ===\n');
 
   const sdk = new PolymarketSDK();
 
   // 1. Get a trending market
-  console.log('1. Fetching a trending market...');
+  console.log('1. 正在获取热门市场...');
   const markets = await sdk.gammaApi.getTrendingMarkets(1);
 
   if (markets.length === 0) {
-    console.log('No trending markets found');
+    console.log('未找到热门市场');
     return;
   }
 
   const market = markets[0];
-  console.log(`   Selected: ${market.question}`);
-  console.log(`   Condition ID: ${market.conditionId}\n`);
+  console.log(`   已选择: ${market.question}`);
+  console.log(`   条件 ID: ${market.conditionId}\n`);
 
   // 2. Get trade history
-  console.log('2. Fetching trade history...');
+  console.log('2. 正在获取交易历史...');
   const trades = await sdk.dataApi.getTradesByMarket(market.conditionId, 500);
-  console.log(`   Found ${trades.length} trades\n`);
+  console.log(`   找到 ${trades.length} 笔交易\n`);
 
   if (trades.length === 0) {
-    console.log('No trades found for this market');
+    console.log('此市场未找到交易');
     return;
   }
 
   // 3. Get token info
-  console.log('3. Getting token info...');
+  console.log('3. 正在获取代币信息...');
   const unifiedMarket = await sdk.getMarket(market.conditionId);
   const yesToken = unifiedMarket.tokens.find(t => t.outcome === 'Yes');
   const noToken = unifiedMarket.tokens.find(t => t.outcome === 'No');
-  console.log(`   YES Token: ${yesToken?.tokenId.slice(0, 16)}...`);
-  console.log(`   NO Token: ${noToken?.tokenId.slice(0, 16)}...\n`);
+  console.log(`   是 代币: ${yesToken?.tokenId.slice(0, 16)}...`);
+  console.log(`   否 代币: ${noToken?.tokenId.slice(0, 16)}...\n`);
 
   // 4. Separate trades by token (YES vs NO)
   const yesTrades = trades.filter((t) => t.outcomeIndex === 0 || t.outcome === 'Yes');
   const noTrades = trades.filter((t) => t.outcomeIndex === 1 || t.outcome === 'No');
-  console.log(`4. Separated trades: YES=${yesTrades.length}, NO=${noTrades.length}\n`);
+  console.log(`4. 已分离交易: 是=${yesTrades.length}, 否=${noTrades.length}\n`);
 
   // 5. Aggregate into 1-hour candles
   const interval: KLineInterval = '1h';
-  console.log(`5. Aggregating into ${interval} candles...\n`);
+  console.log(`5. 正在聚合为 ${interval} K线...\n`);
 
   const yesCandles = aggregateToKLines(yesTrades, interval);
   const noCandles = aggregateToKLines(noTrades, interval);
 
-  console.log(`   YES Token K-Lines (${yesCandles.length} candles):`);
+  console.log(`   是 代币 K线 (${yesCandles.length} 根):`);
   for (const candle of yesCandles.slice(-5)) {
     const date = new Date(candle.timestamp).toLocaleString();
     console.log(
-      `   [${date}] O:${candle.open.toFixed(3)} H:${candle.high.toFixed(3)} L:${candle.low.toFixed(3)} C:${candle.close.toFixed(3)} V:$${candle.volume.toFixed(0)} (${candle.tradeCount} trades)`
+      `   [${date}] 开:${candle.open.toFixed(3)} 高:${candle.high.toFixed(3)} 低:${candle.low.toFixed(3)} 收:${candle.close.toFixed(3)} 量:$${candle.volume.toFixed(0)} (${candle.tradeCount} 笔交易)`
     );
   }
 
-  console.log(`\n   NO Token K-Lines (${noCandles.length} candles):`);
+  console.log(`\n   否 代币 K线 (${noCandles.length} 根):`);
   for (const candle of noCandles.slice(-5)) {
     const date = new Date(candle.timestamp).toLocaleString();
     console.log(
-      `   [${date}] O:${candle.open.toFixed(3)} H:${candle.high.toFixed(3)} L:${candle.low.toFixed(3)} C:${candle.close.toFixed(3)} V:$${candle.volume.toFixed(0)} (${candle.tradeCount} trades)`
+      `   [${date}] 开:${candle.open.toFixed(3)} 高:${candle.high.toFixed(3)} 低:${candle.low.toFixed(3)} 收:${candle.close.toFixed(3)} 量:$${candle.volume.toFixed(0)} (${candle.tradeCount} 笔交易)`
     );
   }
 
   // 6. Calculate spread over time
-  console.log('\n6. Spread Analysis (YES_price + NO_price):\n');
+  console.log('\n6. 价差分析 (是价格 + 否价格):\n');
 
   // Find matching timestamps
   const yesMap = new Map(yesCandles.map((c) => [c.timestamp, c]));
@@ -147,14 +147,14 @@ async function main() {
     if (noCandle) lastNo = noCandle.close;
 
     const spread = lastYes + lastNo;
-    const arbOpportunity = spread < 1 ? 'LONG ARB' : spread > 1 ? 'SHORT ARB' : '';
+    const arbOpportunity = spread < 1 ? '多头套利' : spread > 1 ? '空头套利' : '';
 
     console.log(
-      `   [${date}] YES:${lastYes.toFixed(3)} + NO:${lastNo.toFixed(3)} = ${spread.toFixed(4)} ${arbOpportunity}`
+      `   [${date}] 是:${lastYes.toFixed(3)} + 否:${lastNo.toFixed(3)} = ${spread.toFixed(4)} ${arbOpportunity}`
     );
   }
 
-  console.log('\n=== Done ===');
+  console.log('\n=== 完成 ===');
 }
 
 main().catch(console.error);

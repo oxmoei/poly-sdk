@@ -11,116 +11,116 @@
 import { PolymarketSDK, type KLineInterval } from '../src/index.js';
 
 async function main() {
-  console.log('=== Services Demo ===\n');
+  console.log('=== 服务演示示例 ===\n');
 
   const sdk = new PolymarketSDK();
 
   // ===== WalletService Demo =====
-  console.log('--- WalletService Demo ---\n');
+  console.log('--- 钱包服务演示 ---\n');
 
   // 1. Get top traders
-  console.log('1. Getting top traders...');
+  console.log('1. 正在获取顶级交易者...');
   const topTraders = await sdk.wallets.getTopTraders(5);
-  console.log(`   Found ${topTraders.length} top traders\n`);
+  console.log(`   找到 ${topTraders.length} 个顶级交易者\n`);
 
   for (const trader of topTraders.slice(0, 3)) {
-    console.log(`   Rank #${trader.rank}: ${trader.address.slice(0, 10)}...`);
-    console.log(`   PnL: $${trader.pnl.toLocaleString()}`);
-    console.log(`   Volume: $${trader.volume.toLocaleString()}\n`);
+    console.log(`   排名 #${trader.rank}: ${trader.address.slice(0, 10)}...`);
+    console.log(`   盈亏: $${trader.pnl.toLocaleString()}`);
+    console.log(`   交易量: $${trader.volume.toLocaleString()}\n`);
   }
 
   // 2. Get wallet profile
   if (topTraders.length > 0) {
-    console.log('2. Getting wallet profile for top trader...');
+    console.log('2. 正在获取顶级交易者的钱包资料...');
     const profile = await sdk.wallets.getWalletProfile(topTraders[0].address);
-    console.log(`   Address: ${profile.address.slice(0, 10)}...`);
-    console.log(`   Total PnL: $${profile.totalPnL.toFixed(2)}`);
-    console.log(`   Smart Score: ${profile.smartScore}/100`);
-    console.log(`   Position Count: ${profile.positionCount}`);
-    console.log(`   Last Active: ${profile.lastActiveAt.toLocaleString()}\n`);
+    console.log(`   地址: ${profile.address.slice(0, 10)}...`);
+    console.log(`   总盈亏: $${profile.totalPnL.toFixed(2)}`);
+    console.log(`   聪明分数: ${profile.smartScore}/100`);
+    console.log(`   持仓数: ${profile.positionCount}`);
+    console.log(`   最后活跃: ${profile.lastActiveAt.toLocaleString()}\n`);
   }
 
   // 3. Discover active wallets
-  console.log('3. Discovering active wallets from recent trades...');
+  console.log('3. 正在从最近交易中发现活跃钱包...');
   const activeWallets = await sdk.wallets.discoverActiveWallets(5);
-  console.log(`   Found ${activeWallets.length} active wallets:\n`);
+  console.log(`   找到 ${activeWallets.length} 个活跃钱包:\n`);
   for (const wallet of activeWallets) {
-    console.log(`   - ${wallet.address.slice(0, 10)}...: ${wallet.tradeCount} trades`);
+    console.log(`   - ${wallet.address.slice(0, 10)}...: ${wallet.tradeCount} 笔交易`);
   }
 
   // ===== MarketService Demo =====
-  console.log('\n--- MarketService Demo ---\n');
+  console.log('\n--- 市场服务演示 ---\n');
 
   // 4. Get trending market
-  console.log('4. Getting trending market...');
+  console.log('4. 正在获取热门市场...');
   const trendingMarkets = await sdk.markets.getTrendingMarkets(1);
   if (trendingMarkets.length === 0) {
-    console.log('No trending markets found');
+    console.log('未找到热门市场');
     return;
   }
 
   const market = trendingMarkets[0];
-  console.log(`   Market: ${market.question.slice(0, 60)}...`);
-  console.log(`   Condition ID: ${market.conditionId}\n`);
+  console.log(`   市场: ${market.question.slice(0, 60)}...`);
+  console.log(`   条件 ID: ${market.conditionId}\n`);
 
   // 5. Get unified market data
-  console.log('5. Getting unified market data...');
+  console.log('5. 正在获取统一市场数据...');
   const unifiedMarket = await sdk.markets.getMarket(market.conditionId);
-  console.log(`   Source: ${unifiedMarket.source}`);
+  console.log(`   数据源: ${unifiedMarket.source}`);
   const yesToken = unifiedMarket.tokens.find(t => t.outcome === 'Yes');
   const noToken = unifiedMarket.tokens.find(t => t.outcome === 'No');
-  console.log(`   YES Price: ${yesToken?.price}`);
-  console.log(`   NO Price: ${noToken?.price}`);
-  console.log(`   Volume 24hr: $${unifiedMarket.volume24hr?.toLocaleString() || 'N/A'}\n`);
+  console.log(`   是 价格: ${yesToken?.price}`);
+  console.log(`   否 价格: ${noToken?.price}`);
+  console.log(`   24小时交易量: $${unifiedMarket.volume24hr?.toLocaleString() || 'N/A'}\n`);
 
   // 6. Get K-Lines
-  console.log('6. Getting K-Line data...');
+  console.log('6. 正在获取 K线数据...');
   const interval: KLineInterval = '1h';
   const klines = await sdk.markets.getKLines(market.conditionId, interval, { limit: 100 });
-  console.log(`   Generated ${klines.length} candles (${interval} interval)\n`);
+  console.log(`   生成了 ${klines.length} 根K线 (${interval} 间隔)\n`);
 
   if (klines.length > 0) {
-    console.log('   Last 3 candles:');
+    console.log('   最近 3 根K线:');
     for (const candle of klines.slice(-3)) {
       const date = new Date(candle.timestamp).toLocaleString();
-      console.log(`   [${date}] O:${candle.open.toFixed(3)} H:${candle.high.toFixed(3)} L:${candle.low.toFixed(3)} C:${candle.close.toFixed(3)} V:$${candle.volume.toFixed(0)}`);
+      console.log(`   [${date}] 开:${candle.open.toFixed(3)} 高:${candle.high.toFixed(3)} 低:${candle.low.toFixed(3)} 收:${candle.close.toFixed(3)} 量:$${candle.volume.toFixed(0)}`);
     }
   }
 
   // 7. Get Dual K-Lines
-  console.log('\n7. Getting dual K-Lines (YES + NO)...');
+  console.log('\n7. 正在获取双K线 (是 + 否)...');
   const dualKlines = await sdk.markets.getDualKLines(market.conditionId, interval, { limit: 100 });
-  console.log(`   YES Candles: ${dualKlines.yes.length}`);
-  console.log(`   NO Candles: ${dualKlines.no.length}`);
+  console.log(`   是 K线: ${dualKlines.yes.length}`);
+  console.log(`   否 K线: ${dualKlines.no.length}`);
 
   if (dualKlines.spreadAnalysis && dualKlines.spreadAnalysis.length > 0) {
-    console.log('\n   Spread Analysis (last 3):');
+    console.log('\n   价差分析 (最近 3 个):');
     for (const point of dualKlines.spreadAnalysis.slice(-3)) {
       const date = new Date(point.timestamp).toLocaleString();
-      console.log(`   [${date}] YES:${point.yesPrice.toFixed(3)} + NO:${point.noPrice.toFixed(3)} = ${point.spread.toFixed(4)} ${point.arbOpportunity}`);
+      console.log(`   [${date}] 是:${point.yesPrice.toFixed(3)} + 否:${point.noPrice.toFixed(3)} = ${point.spread.toFixed(4)} ${point.arbOpportunity}`);
     }
   }
 
   // 8. Detect market signals
-  console.log('\n8. Detecting market signals...');
+  console.log('\n8. 正在检测市场信号...');
   const signals = await sdk.markets.detectMarketSignals(market.conditionId);
-  console.log(`   Found ${signals.length} signals:\n`);
+  console.log(`   找到 ${signals.length} 个信号:\n`);
   for (const signal of signals.slice(0, 5)) {
-    console.log(`   - Type: ${signal.type}, Severity: ${signal.severity}`);
+    console.log(`   - 类型: ${signal.type}, 严重程度: ${signal.severity}`);
   }
 
   // 9. Check for arbitrage
-  console.log('\n9. Checking for arbitrage...');
+  console.log('\n9. 正在检查套利机会...');
   const arb = await sdk.markets.detectArbitrage(market.conditionId, 0.001);
   if (arb) {
-    console.log(`   Arbitrage found!`);
-    console.log(`   Type: ${arb.type}, Profit: ${(arb.profit * 100).toFixed(3)}%`);
-    console.log(`   Action: ${arb.action}`);
+    console.log(`   发现套利机会!`);
+    console.log(`   类型: ${arb.type}, 利润: ${(arb.profit * 100).toFixed(3)}%`);
+    console.log(`   操作: ${arb.action}`);
   } else {
-    console.log('   No arbitrage opportunity found');
+    console.log('   未找到套利机会');
   }
 
-  console.log('\n=== Done ===');
+  console.log('\n=== 完成 ===');
 }
 
 main().catch(console.error);

@@ -32,15 +32,15 @@ const targets: RedeemTarget[] = [
 ];
 
 async function main() {
-  console.log('=== Redeeming winning positions ===\n');
+  console.log('=== 赎回获胜仓位 ===\n');
 
   for (const target of targets) {
     console.log(`\n[${target.wallet}] ${target.description}`);
-    console.log(`  ConditionId: ${target.conditionId}`);
+    console.log(`  条件 ID: ${target.conditionId}`);
 
     const privateKey = process.env[target.privateKeyEnv];
     if (!privateKey) {
-      console.log(`  ERROR: ${target.privateKeyEnv} not set`);
+      console.log(`  错误: 未设置 ${target.privateKeyEnv}`);
       continue;
     }
 
@@ -53,38 +53,38 @@ async function main() {
       // Check resolution
       const resolution = await service.getMarketResolution(target.conditionId);
       const resolutionStatus = resolution.isResolved
-        ? `Yes - ${resolution.winningOutcome} wins`
-        : 'Not resolved';
-      console.log(`  Resolution: ${resolutionStatus}`);
+        ? `是 - ${resolution.winningOutcome} 获胜`
+        : '未结算';
+      console.log(`  结算状态: ${resolutionStatus}`);
 
       if (!resolution.isResolved) {
-        console.log(`  SKIP: not resolved yet`);
+        console.log(`  跳过: 尚未结算`);
         continue;
       }
 
       // Get position balance
       const balance = await service.getPositionBalance(target.conditionId);
-      console.log(`  Balance: YES=${balance.yesBalance}, NO=${balance.noBalance}`);
+      console.log(`  余额: 是=${balance.yesBalance}, 否=${balance.noBalance}`);
 
       const hasYes = parseFloat(balance.yesBalance) > 0;
       const hasNo = parseFloat(balance.noBalance) > 0;
 
       if (!hasYes && !hasNo) {
-        console.log(`  SKIP: no tokens to redeem`);
+        console.log(`  跳过: 没有可赎回的代币`);
         continue;
       }
 
       // Redeem
       const result = await service.redeem(target.conditionId);
-      console.log(`  SUCCESS: Redeemed ${result.tokensRedeemed} tokens -> ${result.usdcReceived} USDC`);
-      console.log(`  TX: https://polygonscan.com/tx/${result.txHash}`);
+      console.log(`  成功: 已赎回 ${result.tokensRedeemed} 个代币 -> ${result.usdcReceived} USDC`);
+      console.log(`  交易: https://polygonscan.com/tx/${result.txHash}`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      console.log(`  ERROR: ${message}`);
+      console.log(`  错误: ${message}`);
     }
   }
 
-  console.log('\n=== Done ===');
+  console.log('\n=== 完成 ===');
 }
 
 main().catch(console.error);

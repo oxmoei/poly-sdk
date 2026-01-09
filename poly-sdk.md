@@ -3,24 +3,22 @@
 [![npm version](https://img.shields.io/npm/v/@catalyst-team/poly-sdk.svg)](https://www.npmjs.com/package/@catalyst-team/poly-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Unified TypeScript SDK for Polymarket** - Trading, market data, smart money analysis, and on-chain operations.
+**Polymarket 统一 TypeScript SDK** - 交易、市场数据、聪明钱分析和链上操作。
 
-**Builder**: [@hhhx402](https://x.com/hhhx402) | **Project**: [Catalyst.fun](https://x.com/catalystdotfun)
+☕ **请我喝杯咖啡 (EVM):** `0xd9c5d6111983ea3692f1d29bec4ac7d6f723217a`
 
-☕ **Buy Me a Coffee (Polygon):** `0x58d2ff253998bc2f3b8f5bdbe9c52cad7b022739`
-
-[中文文档](README.zh-CN.md)
+[English](poly-sdk-EN.md)
 
 ---
 
-## Table of Contents
+## 目录
 
-- [Overview](#overview)
-- [Installation](#installation)
-- [Architecture](#architecture)
-- [Quick Start](#quick-start)
-- [Services Guide](#services-guide)
-  - [PolymarketSDK (Entry Point)](#polymarketsdk-entry-point)
+- [概览](#概览)
+- [安装](#安装)
+- [架构](#架构)
+- [快速开始](#快速开始)
+- [服务指南](#服务指南)
+  - [PolymarketSDK (入口)](#polymarketsdk-入口)
   - [TradingService](#tradingservice)
   - [MarketService](#marketservice)
   - [OnchainService](#onchainservice)
@@ -28,184 +26,176 @@
   - [WalletService](#walletservice)
   - [SmartMoneyService](#smartmoneyservice)
   - [ArbitrageService](#arbitrageservice)
-  - [DipArbService](#diparbservice)
-- [Low-Level Clients](#low-level-clients)
-- [Breaking Changes (v0.3.0)](#breaking-changes-v030)
-- [Examples](#examples)
-- [API Reference](#api-reference)
-- [License](#license)
+- [底层客户端](#底层客户端)
+- [破坏性变更 (v0.3.0)](#破坏性变更-v030)
+- [示例](#示例)
+- [API 参考](#api-参考)
+- [许可证](#许可证)
 
 ---
 
-## Overview
+## 概览
 
-`@catalyst-team/poly-sdk` is a comprehensive TypeScript SDK that provides:
+`@catalyst-team/poly-sdk` 是一个全面的 TypeScript SDK，提供：
 
-- **Trading** - Place limit/market orders (GTC, GTD, FOK, FAK)
-- **Market Data** - Real-time prices, orderbooks, K-lines, historical trades
-- **Smart Money Analysis** - Track top traders, calculate smart scores, follow wallet strategies
-- **On-chain Operations** - CTF (split/merge/redeem), approvals, DEX swaps
-- **Arbitrage Detection** - Real-time arbitrage scanning and execution
-- **WebSocket Streaming** - Live price feeds and orderbook updates
+- **交易** - 下限价单/市价单 (GTC, GTD, FOK, FAK)
+- **市场数据** - 实时价格、订单簿、K线、历史成交
+- **聪明钱分析** - 追踪顶级交易者、计算聪明分数、跟单策略
+- **链上操作** - CTF (split/merge/redeem)、授权、DEX 交换
+- **套利检测** - 实时套利扫描和执行
+- **WebSocket 推送** - 实时价格和订单簿更新
 
-### Key Features
+### 核心功能
 
-| Feature | Description |
-|---------|-------------|
-| **Unified API** | Single SDK for all Polymarket APIs |
-| **Type Safety** | Full TypeScript support with comprehensive types |
-| **Rate Limiting** | Built-in rate limiting per API endpoint |
-| **Caching** | TTL-based caching with pluggable adapters |
-| **Error Handling** | Structured errors with auto-retry |
+| 功能 | 描述 |
+|------|------|
+| **统一 API** | 单一 SDK 访问所有 Polymarket API |
+| **类型安全** | 完整的 TypeScript 支持和类型定义 |
+| **速率限制** | 按 API 端点内置速率限制 |
+| **缓存** | 基于 TTL 的缓存，支持可插拔适配器 |
+| **错误处理** | 结构化错误和自动重试 |
 
 ---
 
-## Installation
+## 安装
 
 ```bash
 pnpm add @catalyst-team/poly-sdk
 
-# or
+# 或
 npm install @catalyst-team/poly-sdk
 
-# or
+# 或
 yarn add @catalyst-team/poly-sdk
 ```
 
 ---
 
-## Architecture
+## 架构
 
-The SDK is organized into three layers:
+SDK 分为三层：
 
 ```
-poly-sdk Architecture
+poly-sdk 架构
 ================================================================================
 
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                              PolymarketSDK                                    │
-│                            (Entry Point)                                      │
+│                               (入口点)                                         │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                                                                               │
-│  Layer 3: High-Level Services (Recommended)                                   │
+│  第三层: 高级服务 (推荐使用)                                                    │
 │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━                                      │
 │  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐                 │
 │  │  TradingService │ │  MarketService  │ │ OnchainService  │                 │
 │  │  ────────────── │ │  ────────────── │ │ ──────────────  │                 │
-│  │  • Limit orders │ │  • K-lines      │ │ • Split/Merge   │                 │
-│  │  • Market orders│ │  • Orderbook    │ │ • Redeem        │                 │
-│  │  • Order mgmt   │ │  • Price history│ │ • Approvals     │                 │
-│  │  • Rewards      │ │  • Arbitrage    │ │ • Swaps         │                 │
+│  │  • 限价单       │ │  • K线          │ │ • Split/Merge   │                 │
+│  │  • 市价单       │ │  • 订单簿       │ │ • Redeem        │                 │
+│  │  • 订单管理     │ │  • 价格历史     │ │ • 授权          │                 │
+│  │  • 奖励         │ │  • 套利检测     │ │ • 交换          │                 │
 │  └─────────────────┘ └─────────────────┘ └─────────────────┘                 │
 │                                                                               │
 │  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐                 │
 │  │RealtimeServiceV2│ │  WalletService  │ │SmartMoneyService│                 │
 │  │  ────────────── │ │  ────────────── │ │ ──────────────  │                 │
-│  │  • WebSocket    │ │  • Profiles     │ │ • Top traders   │                 │
-│  │  • Price feeds  │ │  • Smart scores │ │ • Copy trading  │                 │
-│  │  • Book updates │ │  • Sell detect  │ │ • Signal detect │                 │
-│  │  • User events  │ │  • PnL calc     │ │ • Leaderboard   │                 │
+│  │  • WebSocket    │ │  • 用户画像     │ │ • 顶级交易者    │                 │
+│  │  • 价格推送     │ │  • 聪明分数     │ │ • 跟单交易      │                 │
+│  │  • 订单簿更新   │ │  • 卖出检测     │ │ • 信号检测      │                 │
+│  │  • 用户事件     │ │  • PnL 计算     │ │ • 排行榜        │                 │
 │  └─────────────────┘ └─────────────────┘ └─────────────────┘                 │
 │                                                                               │
 │  ┌─────────────────────────────────────────────────────────────────────────┐ │
 │  │                        ArbitrageService                                  │ │
 │  │  ─────────────────────────────────────────────────────────────────────  │ │
-│  │  • Market scanning  • Auto execution  • Rebalancer  • Smart clearing    │ │
-│  └─────────────────────────────────────────────────────────────────────────┘ │
-│                                                                               │
-│  ┌─────────────────────────────────────────────────────────────────────────┐ │
-│  │                         DipArbService                                    │ │
-│  │  ─────────────────────────────────────────────────────────────────────  │ │
-│  │  • 15m crypto UP/DOWN  • Dip detection  • Auto-rotate  • Background redeem│
+│  │  • 市场扫描    • 自动执行    • 再平衡器    • 智能清仓                      │ │
 │  └─────────────────────────────────────────────────────────────────────────┘ │
 │                                                                               │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                                                                               │
-│  Layer 2: Low-Level Clients (Advanced Users / Raw API Access)                │
+│  第二层: 底层客户端 (高级用户 / 原始 API 访问)                                  │
 │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━                       │
 │  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ │
 │  │GammaApiClnt│ │DataApiClnt │ │SubgraphClnt│ │ CTFClient  │ │BridgeClient│ │
 │  │ ────────── │ │ ────────── │ │ ────────── │ │ ────────── │ │ ────────── │ │
-│  │ • Markets  │ │ • Positions│ │ • On-chain │ │ • Split    │ │ • Cross-   │ │
-│  │ • Events   │ │ • Trades   │ │ • PnL      │ │ • Merge    │ │   chain    │ │
-│  │ • Search   │ │ • Activity │ │ • OI       │ │ • Redeem   │ │ • Deposits │ │
+│  │ • 市场     │ │ • 持仓     │ │ • 链上数据 │ │ • Split    │ │ • 跨链     │ │
+│  │ • 事件     │ │ • 交易     │ │ • PnL      │ │ • Merge    │ │   充值     │ │
+│  │ • 搜索     │ │ • 活动     │ │ • OI       │ │ • Redeem   │ │            │ │
 │  └────────────┘ └────────────┘ └────────────┘ └────────────┘ └────────────┘ │
 │                                                                               │
-│  Uses Official Polymarket Clients:                                           │
-│  • @polymarket/clob-client - Trading, orderbook, market data                 │
-│  • @polymarket/real-time-data-client - WebSocket real-time updates           │
+│  使用官方 Polymarket 客户端:                                                   │
+│  • @polymarket/clob-client - 交易、订单簿、市场数据                            │
+│  • @polymarket/real-time-data-client - WebSocket 实时更新                     │
 │                                                                               │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                                                                               │
-│  Layer 1: Core Infrastructure                                                │
+│  第一层: 核心基础设施                                                          │
 │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━                                                │
 │  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ │
-│  │RateLimiter │ │   Cache    │ │   Errors   │ │   Types    │ │Price Utils │ │
+│  │ 速率限制器 │ │    缓存    │ │    错误    │ │    类型    │ │  价格工具  │ │
 │  │ ────────── │ │ ────────── │ │ ────────── │ │ ────────── │ │ ────────── │ │
-│  │ • Per-API  │ │ • TTL-based│ │ • Retry    │ │ • Unified  │ │ • Arb calc │ │
-│  │ • Bottleneck│ │ • Pluggable│ │ • Codes    │ │ • K-lines  │ │ • Rounding │ │
+│  │ • 按 API   │ │ • 基于 TTL │ │ • 重试     │ │ • 统一     │ │ • 套利计算 │ │
+│  │ • Bottleneck│ │ • 可插拔   │ │ • 错误码   │ │ • K线      │ │ • 舍入     │ │
 │  └────────────┘ └────────────┘ └────────────┘ └────────────┘ └────────────┘ │
 │                                                                               │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Service Responsibilities
+### 服务职责
 
-| Service | Responsibility |
-|---------|---------------|
-| **PolymarketSDK** | Entry point, integrates all services |
-| **TradingService** | Order management (place/cancel/query) |
-| **MarketService** | Market data (orderbook/K-lines/search) |
-| **OnchainService** | On-chain ops (split/merge/redeem/approve/swap) |
-| **RealtimeServiceV2** | WebSocket real-time data |
-| **WalletService** | Wallet/trader analysis |
-| **SmartMoneyService** | Smart money tracking |
-| **ArbitrageService** | Arbitrage detection & execution |
-| **DipArbService** | Dip arbitrage for 15m crypto markets |
+| 服务 | 职责 |
+|------|------|
+| **PolymarketSDK** | 入口点，整合所有服务 |
+| **TradingService** | 订单管理（下单/撤单/查询）|
+| **MarketService** | 市场数据（订单簿/K线/搜索）|
+| **OnchainService** | 链上操作（split/merge/redeem/授权/交换）|
+| **RealtimeServiceV2** | WebSocket 实时数据 |
+| **WalletService** | 钱包/交易者分析 |
+| **SmartMoneyService** | 聪明钱跟踪 |
+| **ArbitrageService** | 套利检测与执行 |
 
 ---
 
-## Quick Start
+## 快速开始
 
-### Basic Usage (Read-Only)
+### 基础用法（只读）
 
 ```typescript
 import { PolymarketSDK } from '@catalyst-team/poly-sdk';
 
-// No authentication needed for read operations
+// 只读操作无需认证
 const sdk = new PolymarketSDK();
 
-// Get market by slug or condition ID
+// 通过 slug 或 condition ID 获取市场
 const market = await sdk.getMarket('will-trump-win-2024');
 console.log(`${market.question}`);
 console.log(`YES: ${market.tokens.find(t => t.outcome === 'Yes')?.price}`);
 console.log(`NO: ${market.tokens.find(t => t.outcome === 'No')?.price}`);
 
-// Get processed orderbook with analytics
+// 获取处理后的订单簿（含分析数据）
 const orderbook = await sdk.getOrderbook(market.conditionId);
-console.log(`Long Arb Profit: ${orderbook.summary.longArbProfit}`);
-console.log(`Short Arb Profit: ${orderbook.summary.shortArbProfit}`);
+console.log(`多头套利利润: ${orderbook.summary.longArbProfit}`);
+console.log(`空头套利利润: ${orderbook.summary.shortArbProfit}`);
 
-// Detect arbitrage opportunities
+// 检测套利机会
 const arb = await sdk.detectArbitrage(market.conditionId);
 if (arb) {
-  console.log(`${arb.type.toUpperCase()} ARB: ${(arb.profit * 100).toFixed(2)}% profit`);
+  console.log(`${arb.type.toUpperCase()} 套利: ${(arb.profit * 100).toFixed(2)}% 利润`);
   console.log(arb.action);
 }
 ```
 
-### With Authentication (Trading)
+### 带认证（交易）
 
 ```typescript
 import { PolymarketSDK } from '@catalyst-team/poly-sdk';
 
-// Recommended: Use static factory method (one line to get started)
+// 推荐: 使用静态工厂方法（一行代码启动）
 const sdk = await PolymarketSDK.create({
   privateKey: process.env.POLYMARKET_PRIVATE_KEY!,
 });
-// Ready to trade - SDK is initialized and WebSocket connected
+// 准备好交易 - SDK 已初始化并连接 WebSocket
 
-// Place a limit order
+// 下限价单
 const order = await sdk.tradingService.createLimitOrder({
   tokenId: yesTokenId,
   side: 'BUY',
@@ -213,69 +203,68 @@ const order = await sdk.tradingService.createLimitOrder({
   size: 10,
   orderType: 'GTC',
 });
-console.log(`Order placed: ${order.id}`);
+console.log(`订单已下: ${order.id}`);
 
-// Get open orders
+// 获取未成交订单
 const openOrders = await sdk.tradingService.getOpenOrders();
-console.log(`Open orders: ${openOrders.length}`);
+console.log(`未成交订单: ${openOrders.length}`);
 
-// Clean up when done
+// 完成后清理
 sdk.stop();
 ```
 
 ---
 
-## Services Guide
+## 服务指南
 
-### PolymarketSDK (Entry Point)
+### PolymarketSDK (入口)
 
-The main SDK class that integrates all services.
+整合所有服务的主 SDK 类。
 
 ```typescript
 import { PolymarketSDK } from '@catalyst-team/poly-sdk';
 
-// ===== Method 1: Static Factory (Recommended) =====
-// One line: new + initialize + connect + waitForConnection
+// ===== 方式 1: 静态工厂方法（推荐）=====
+// 一行搞定: new + initialize + connect + waitForConnection
 const sdk = await PolymarketSDK.create({
-  privateKey: '0x...', // Optional: for trading
-  chainId: 137,        // Optional: Polygon mainnet (default)
+  privateKey: '0x...', // 可选: 用于交易
+  chainId: 137,        // 可选: Polygon 主网（默认）
 });
 
-// ===== Method 2: Using start() =====
+// ===== 方式 2: 使用 start() =====
 // const sdk = new PolymarketSDK({ privateKey: '0x...' });
 // await sdk.start();  // initialize + connect + waitForConnection
 
-// ===== Method 3: Manual Step-by-Step (Full Control) =====
+// ===== 方式 3: 手动分步（完全控制）=====
 // const sdk = new PolymarketSDK({ privateKey: '0x...' });
-// await sdk.initialize();       // Initialize trading service
-// sdk.connect();                // Connect WebSocket
-// await sdk.waitForConnection(); // Wait for connection
+// await sdk.initialize();       // 初始化交易服务
+// sdk.connect();                // 连接 WebSocket
+// await sdk.waitForConnection(); // 等待连接完成
 
-// Access services
-sdk.tradingService  // Trading operations
-sdk.markets         // Market data
-sdk.wallets         // Wallet analysis
-sdk.realtime        // WebSocket real-time data
-sdk.smartMoney      // Smart money tracking & copy trading
-sdk.dipArb          // Dip arbitrage for 15m crypto markets
-sdk.dataApi         // Direct Data API access
-sdk.gammaApi        // Direct Gamma API access
-sdk.subgraph        // On-chain data via Goldsky
+// 访问服务
+sdk.tradingService  // 交易操作
+sdk.markets         // 市场数据
+sdk.wallets         // 钱包分析
+sdk.realtime        // WebSocket 实时数据
+sdk.smartMoney      // 聪明钱跟踪和跟单交易
+sdk.dataApi         // 直接访问 Data API
+sdk.gammaApi        // 直接访问 Gamma API
+sdk.subgraph        // 通过 Goldsky 访问链上数据
 
-// Convenience methods
-await sdk.getMarket(identifier);        // Get unified market
-await sdk.getOrderbook(conditionId);    // Get processed orderbook
-await sdk.detectArbitrage(conditionId); // Detect arb opportunity
+// 便捷方法
+await sdk.getMarket(identifier);        // 获取统一市场
+await sdk.getOrderbook(conditionId);    // 获取处理后的订单簿
+await sdk.detectArbitrage(conditionId); // 检测套利机会
 
-// Clean up
-sdk.stop();  // Disconnect all services
+// 清理
+sdk.stop();  // 断开所有服务
 ```
 
 ---
 
 ### TradingService
 
-Order management using `@polymarket/clob-client`.
+使用 `@polymarket/clob-client` 进行订单管理。
 
 ```typescript
 import { TradingService } from '@catalyst-team/poly-sdk';
@@ -285,9 +274,9 @@ const trading = new TradingService(rateLimiter, cache, {
 });
 await trading.initialize();
 
-// ===== Limit Orders =====
+// ===== 限价单 =====
 
-// GTC: Good Till Cancelled
+// GTC: 一直有效直到取消
 const gtcOrder = await trading.createLimitOrder({
   tokenId: yesTokenId,
   side: 'BUY',
@@ -296,19 +285,19 @@ const gtcOrder = await trading.createLimitOrder({
   orderType: 'GTC',
 });
 
-// GTD: Good Till Date (expires at timestamp)
+// GTD: 有效期至指定时间
 const gtdOrder = await trading.createLimitOrder({
   tokenId: yesTokenId,
   side: 'BUY',
   price: 0.45,
   size: 10,
   orderType: 'GTD',
-  expiration: Math.floor(Date.now() / 1000) + 3600, // 1 hour
+  expiration: Math.floor(Date.now() / 1000) + 3600, // 1 小时
 });
 
-// ===== Market Orders =====
+// ===== 市价单 =====
 
-// FOK: Fill Or Kill (fill entirely or cancel)
+// FOK: 全部成交或取消
 const fokOrder = await trading.createMarketOrder({
   tokenId: yesTokenId,
   side: 'BUY',
@@ -316,20 +305,20 @@ const fokOrder = await trading.createMarketOrder({
   orderType: 'FOK',
 });
 
-// FAK: Fill And Kill (partial fill ok)
+// FAK: 部分成交也可以
 const fakOrder = await trading.createMarketOrder({
   tokenId: yesTokenId,
   side: 'SELL',
-  amount: 10, // 10 shares
+  amount: 10, // 10 份额
   orderType: 'FAK',
 });
 
-// ===== Order Management =====
+// ===== 订单管理 =====
 const openOrders = await trading.getOpenOrders();
 await trading.cancelOrder(orderId);
 await trading.cancelAllOrders();
 
-// ===== Rewards (Market Making Incentives) =====
+// ===== 奖励（做市激励）=====
 const isScoring = await trading.isOrderScoring(orderId);
 const rewards = await trading.getCurrentRewards();
 const earnings = await trading.getEarnings('2024-12-07');
@@ -339,52 +328,52 @@ const earnings = await trading.getEarnings('2024-12-07');
 
 ### MarketService
 
-Market data, K-lines, orderbook analysis.
+市场数据、K线、订单簿分析。
 
 ```typescript
 import { MarketService } from '@catalyst-team/poly-sdk';
 
-// Get unified market
+// 获取统一市场
 const market = await sdk.markets.getMarket('btc-100k-2024');
 
-// Get K-Lines
+// 获取 K 线
 const klines = await sdk.markets.getKLines(conditionId, '1h', { limit: 100 });
 
-// Get dual K-Lines (YES + NO) with spread analysis
+// 获取双 K 线（YES + NO）含价差分析
 const dual = await sdk.markets.getDualKLines(conditionId, '1h');
-console.log(dual.yes);              // YES token candles
-console.log(dual.no);               // NO token candles
-console.log(dual.spreadAnalysis);   // Historical spread (trade prices)
-console.log(dual.realtimeSpread);   // Real-time spread (orderbook)
+console.log(dual.yes);              // YES 代币蜡烛图
+console.log(dual.no);               // NO 代币蜡烛图
+console.log(dual.spreadAnalysis);   // 历史价差（成交价）
+console.log(dual.realtimeSpread);   // 实时价差（订单簿）
 
-// Get processed orderbook
+// 获取处理后的订单簿
 const orderbook = await sdk.markets.getProcessedOrderbook(conditionId);
 
-// Quick real-time spread check
+// 快速实时价差检查
 const spread = await sdk.markets.getRealtimeSpread(conditionId);
 if (spread.longArbProfit > 0.005) {
-  console.log(`Long arb: buy YES@${spread.yesAsk} + NO@${spread.noAsk}`);
+  console.log(`多头套利: 买 YES@${spread.yesAsk} + NO@${spread.noAsk}`);
 }
 
-// Detect market signals
+// 检测市场信号
 const signals = await sdk.markets.detectMarketSignals(conditionId);
 ```
 
-#### Understanding Polymarket Orderbook
+#### 理解 Polymarket 订单簿
 
-**Important**: Polymarket orderbooks have a mirror property:
+**重要**: Polymarket 订单簿有镜像特性：
 
 ```
-Buy YES @ P = Sell NO @ (1-P)
+买 YES @ P = 卖 NO @ (1-P)
 ```
 
-This means the **same order appears in both orderbooks**. Simple addition causes double-counting:
+这意味着**同一订单会出现在两个订单簿中**。简单相加会导致重复计算：
 
 ```typescript
-// WRONG: Double counts mirror orders
-const askSum = YES.ask + NO.ask;  // ~1.998, not ~1.0
+// 错误: 重复计算镜像订单
+const askSum = YES.ask + NO.ask;  // ~1.998, 而非 ~1.0
 
-// CORRECT: Use effective prices
+// 正确: 使用有效价格
 import { getEffectivePrices, checkArbitrage } from '@catalyst-team/poly-sdk';
 
 const effective = getEffectivePrices(yesAsk, yesBid, noAsk, noBid);
@@ -393,7 +382,7 @@ const effective = getEffectivePrices(yesAsk, yesBid, noAsk, noBid);
 
 const arb = checkArbitrage(yesAsk, noAsk, yesBid, noBid);
 if (arb) {
-  console.log(`${arb.type} arb: ${(arb.profit * 100).toFixed(2)}% profit`);
+  console.log(`${arb.type} 套利: ${(arb.profit * 100).toFixed(2)}% 利润`);
 }
 ```
 
@@ -401,51 +390,51 @@ if (arb) {
 
 ### OnchainService
 
-Unified interface for all on-chain operations: CTF + Approvals + Swaps.
+链上操作的统一接口：CTF + 授权 + 交换。
 
 ```typescript
 import { OnchainService } from '@catalyst-team/poly-sdk';
 
 const onchain = new OnchainService({
   privateKey: process.env.POLYMARKET_PRIVATE_KEY!,
-  rpcUrl: 'https://polygon-rpc.com', // optional
+  rpcUrl: 'https://polygon-rpc.com', // 可选
 });
 
-// Check if ready for CTF trading
+// 检查是否准备好进行 CTF 交易
 const status = await onchain.checkReadyForCTF('100');
 if (!status.ready) {
-  console.log('Issues:', status.issues);
+  console.log('问题:', status.issues);
   await onchain.approveAll();
 }
 
-// ===== CTF Operations =====
+// ===== CTF 操作 =====
 
-// Split: USDC -> YES + NO tokens
+// Split: USDC -> YES + NO 代币
 const splitResult = await onchain.split(conditionId, '100');
 
-// Merge: YES + NO -> USDC (for arbitrage)
+// Merge: YES + NO -> USDC（用于套利）
 const mergeResult = await onchain.mergeByTokenIds(conditionId, tokenIds, '100');
 
-// Redeem: Winning tokens -> USDC (after resolution)
+// Redeem: 获胜代币 -> USDC（结算后）
 const redeemResult = await onchain.redeemByTokenIds(conditionId, tokenIds);
 
-// ===== DEX Swaps (QuickSwap V3) =====
+// ===== DEX 交换 (QuickSwap V3) =====
 
-// Swap MATIC to USDC.e (required for CTF)
+// 将 MATIC 交换为 USDC.e（CTF 需要）
 await onchain.swap('MATIC', 'USDC_E', '50');
 
-// Get balances
+// 获取余额
 const balances = await onchain.getBalances();
 console.log(`USDC.e: ${balances.usdcE}`);
 ```
 
-**Note**: Polymarket CTF requires **USDC.e** (0x2791...), not native USDC.
+**注意**: Polymarket CTF 需要 **USDC.e** (0x2791...)，不是原生 USDC。
 
 ---
 
 ### RealtimeServiceV2
 
-WebSocket real-time data using `@polymarket/real-time-data-client`.
+使用 `@polymarket/real-time-data-client` 的 WebSocket 实时数据。
 
 ```typescript
 import { RealtimeServiceV2 } from '@catalyst-team/poly-sdk';
@@ -455,32 +444,32 @@ const realtime = new RealtimeServiceV2({
   pingInterval: 5000,
 });
 
-// Connect and subscribe
+// 连接并订阅
 realtime.connect();
 realtime.subscribeMarket([yesTokenId, noTokenId]);
 
-// Event-based API
+// 事件 API
 realtime.on('priceUpdate', (update) => {
   console.log(`${update.assetId}: ${update.price}`);
-  console.log(`Midpoint: ${update.midpoint}, Spread: ${update.spread}`);
+  console.log(`中间价: ${update.midpoint}, 价差: ${update.spread}`);
 });
 
 realtime.on('bookUpdate', (update) => {
-  // Orderbook is auto-normalized:
-  // bids: descending (best first), asks: ascending (best first)
-  console.log(`Best bid: ${update.bids[0]?.price}`);
-  console.log(`Best ask: ${update.asks[0]?.price}`);
+  // 订单簿自动规范化:
+  // bids: 降序（最佳在前）, asks: 升序（最佳在前）
+  console.log(`最佳买价: ${update.bids[0]?.price}`);
+  console.log(`最佳卖价: ${update.asks[0]?.price}`);
 });
 
 realtime.on('lastTrade', (trade) => {
-  console.log(`Trade: ${trade.side} ${trade.size} @ ${trade.price}`);
+  console.log(`成交: ${trade.side} ${trade.size} @ ${trade.price}`);
 });
 
-// Get cached prices
+// 获取缓存价格
 const price = realtime.getPrice(yesTokenId);
 const book = realtime.getBook(yesTokenId);
 
-// Cleanup
+// 清理
 realtime.disconnect();
 ```
 
@@ -488,29 +477,29 @@ realtime.disconnect();
 
 ### WalletService
 
-Wallet analysis and smart money scoring.
+钱包分析和聪明钱评分。
 
 ```typescript
-// Get top traders
+// 获取顶级交易者
 const traders = await sdk.wallets.getTopTraders(10);
 
-// Get wallet profile with smart score
+// 获取钱包画像（含聪明分数）
 const profile = await sdk.wallets.getWalletProfile('0x...');
-console.log(`Smart Score: ${profile.smartScore}/100`);
-console.log(`Win Rate: ${profile.winRate}%`);
-console.log(`Total PnL: $${profile.totalPnL}`);
+console.log(`聪明分数: ${profile.smartScore}/100`);
+console.log(`胜率: ${profile.winRate}%`);
+console.log(`总 PnL: $${profile.totalPnL}`);
 
-// Detect sell activity (for follow-wallet strategy)
+// 检测卖出活动（用于跟单策略）
 const sellResult = await sdk.wallets.detectSellActivity(
   '0x...',
   conditionId,
-  Date.now() - 24 * 60 * 60 * 1000 // since 24h ago
+  Date.now() - 24 * 60 * 60 * 1000 // 24小时前
 );
 if (sellResult.isSelling) {
-  console.log(`Sold ${sellResult.percentageSold}%`);
+  console.log(`已卖出 ${sellResult.percentageSold}%`);
 }
 
-// Track group sell ratio
+// 跟踪群体卖出比例
 const groupSell = await sdk.wallets.trackGroupSellRatio(
   ['0x...', '0x...'],
   conditionId,
@@ -523,246 +512,133 @@ const groupSell = await sdk.wallets.trackGroupSellRatio(
 
 ### SmartMoneyService
 
-Smart money detection and **real-time auto copy trading**.
+聪明钱检测和**实时自动跟单交易**。
 
 ```typescript
 import { PolymarketSDK } from '@catalyst-team/poly-sdk';
 
-// One line to get started (recommended)
+// 一行代码启动（推荐）
 const sdk = await PolymarketSDK.create({ privateKey: '0x...' });
-// SDK is initialized and WebSocket connected
 
-// Get smart money wallets
-const wallets = await sdk.smartMoney.getSmartMoneyList(50);
-
-// Check if address is smart money
-const isSmartMoney = await sdk.smartMoney.isSmartMoney('0x...');
-
-// Subscribe to smart money trades
-const sub = sdk.smartMoney.subscribeSmartMoneyTrades(
-  (trade) => {
-    console.log(`${trade.traderName} ${trade.side} ${trade.outcome} @ $${trade.price}`);
-  },
-  { filterAddresses: ['0x...'], minSize: 10 }
-);
-
-// ===== Auto Copy Trading =====
-// Real-time copy trading - when smart money trades, copy immediately
+// ===== 自动跟单交易 =====
+// 实时跟单 - 聪明钱一旦交易，立即跟单
 
 const subscription = await sdk.smartMoney.startAutoCopyTrading({
-  // Target selection
-  topN: 50,                    // Follow top 50 traders from leaderboard
-  // targetAddresses: ['0x...'], // Or specify addresses directly
+  // 目标选择
+  topN: 50,                    // 跟踪排行榜前 50 名
+  // targetAddresses: ['0x...'], // 或直接指定地址
 
-  // Order settings
-  sizeScale: 0.1,              // Copy 10% of their trade size
-  maxSizePerTrade: 10,         // Max $10 per trade
-  maxSlippage: 0.03,           // 3% slippage tolerance
-  orderType: 'FOK',            // FOK or FAK
+  // 订单设置
+  sizeScale: 0.1,              // 跟单 10% 的交易量
+  maxSizePerTrade: 10,         // 每笔最多 $10
+  maxSlippage: 0.03,           // 3% 滑点容忍度
+  orderType: 'FOK',            // FOK 或 FAK
 
-  // Filters
-  minTradeSize: 5,             // Only copy trades > $5
-  sideFilter: 'BUY',           // Only copy BUY trades (optional)
+  // 过滤
+  minTradeSize: 5,             // 只跟单 > $5 的交易
+  sideFilter: 'BUY',           // 只跟单买入（可选）
 
-  // Testing
-  dryRun: true,                // Set false for real trades
+  // 测试模式
+  dryRun: true,                // 设为 false 执行真实交易
 
-  // Callbacks
+  // 回调
   onTrade: (trade, result) => {
-    console.log(`Copied ${trade.traderName}: ${result.success ? '✅' : '❌'}`);
+    console.log(`跟单 ${trade.traderName}: ${result.success ? '✅' : '❌'}`);
   },
   onError: (error) => console.error(error),
 });
+// 停止
+subscription.stop();
+sdk.stop();
 
-console.log(`Tracking ${subscription.targetAddresses.length} wallets`);
+console.log(`正在跟踪 ${subscription.targetAddresses.length} 个钱包`);
 
-// Get stats
+// 获取统计
 const stats = subscription.getStats();
-console.log(`Detected: ${stats.tradesDetected}, Executed: ${stats.tradesExecuted}`);
+console.log(`检测: ${stats.tradesDetected}, 执行: ${stats.tradesExecuted}`);
 
-// Stop
+// 停止
 subscription.stop();
 sdk.stop();
 ```
 
-> **Note**: Polymarket minimum order size is **$1**. Orders below $1 will be automatically skipped.
+> **注意**: Polymarket 最小订单金额为 **$1**。低于 $1 的订单会被自动跳过。
 
-📁 **Full examples**: See [scripts/smart-money/](scripts/smart-money/) for complete working scripts:
-- `04-auto-copy-trading.ts` - Full-featured auto copy trading
-- `05-auto-copy-simple.ts` - Simplified SDK usage
-- `06-real-copy-test.ts` - Real trading test
+📁 **完整示例**: 查看 [scripts/smart-money/](scripts/smart-money/) 获取完整可运行的脚本：
+- `04-auto-copy-trading.ts` - 完整功能的自动跟单
+- `05-auto-copy-simple.ts` - 简化的 SDK 用法
+- `06-real-copy-test.ts` - 真实交易测试
 
 ---
 
 ### ArbitrageService
 
-Real-time arbitrage detection, execution, and position management.
+实时套利检测、执行和仓位管理。
 
 ```typescript
 import { ArbitrageService } from '@catalyst-team/poly-sdk';
 
 const arbService = new ArbitrageService({
   privateKey: process.env.POLY_PRIVKEY,
-  profitThreshold: 0.005,  // 0.5% minimum profit
-  minTradeSize: 5,         // $5 minimum
-  maxTradeSize: 100,       // $100 maximum
-  autoExecute: true,       // Auto-execute opportunities
+  profitThreshold: 0.005,  // 最小 0.5% 利润
+  minTradeSize: 5,         // 最小 $5
+  maxTradeSize: 100,       // 最大 $100
+  autoExecute: true,       // 自动执行机会
 
-  // Rebalancer: auto-maintain USDC/token ratio
+  // 再平衡器: 自动维持 USDC/代币比例
   enableRebalancer: true,
-  minUsdcRatio: 0.2,       // Min 20% USDC
-  maxUsdcRatio: 0.8,       // Max 80% USDC
-  targetUsdcRatio: 0.5,    // Target when rebalancing
+  minUsdcRatio: 0.2,       // 最小 20% USDC
+  maxUsdcRatio: 0.8,       // 最大 80% USDC
+  targetUsdcRatio: 0.5,    // 再平衡目标
 
-  // Execution safety
-  sizeSafetyFactor: 0.8,   // Use 80% of orderbook depth
-  autoFixImbalance: true,  // Auto-fix partial fills
+  // 执行安全
+  sizeSafetyFactor: 0.8,   // 使用 80% 订单簿深度
+  autoFixImbalance: true,  // 自动修复部分成交
 });
 
-// Listen for events
+// 监听事件
 arbService.on('opportunity', (opp) => {
-  console.log(`${opp.type.toUpperCase()} ARB: ${opp.profitPercent.toFixed(2)}%`);
+  console.log(`${opp.type.toUpperCase()} 套利: ${opp.profitPercent.toFixed(2)}%`);
 });
 
 arbService.on('execution', (result) => {
   if (result.success) {
-    console.log(`Executed: $${result.profit.toFixed(2)} profit`);
+    console.log(`已执行: $${result.profit.toFixed(2)} 利润`);
   }
 });
 
-// ===== Workflow =====
+// ===== 工作流程 =====
 
-// 1. Scan markets for opportunities
+// 1. 扫描市场寻找机会
 const results = await arbService.scanMarkets({ minVolume24h: 5000 }, 0.005);
 
-// 2. Start monitoring best market
+// 2. 开始监控最佳市场
 const best = await arbService.findAndStart(0.005);
-console.log(`Started: ${best.market.name} (+${best.profitPercent.toFixed(2)}%)`);
+console.log(`已启动: ${best.market.name} (+${best.profitPercent.toFixed(2)}%)`);
 
-// 3. Run for a while...
-await new Promise(r => setTimeout(r, 60 * 60 * 1000)); // 1 hour
+// 3. 运行一段时间...
+await new Promise(r => setTimeout(r, 60 * 60 * 1000)); // 1 小时
 
-// 4. Stop and clear positions
+// 4. 停止并清仓
 await arbService.stop();
 const clearResult = await arbService.clearPositions(best.market, true);
-console.log(`Recovered: $${clearResult.totalUsdcRecovered.toFixed(2)}`);
+console.log(`已回收: $${clearResult.totalUsdcRecovered.toFixed(2)}`);
 ```
 
 ---
 
-### DipArbService
+## 底层客户端
 
-**Dip Arbitrage** for Polymarket 15-minute crypto UP/DOWN markets (BTC, ETH, SOL, XRP).
-
-**Strategy**: Detect sudden price dips → Buy dipped side (Leg1) → Wait for opposite to drop → Buy opposite (Leg2) → Lock profit (UP + DOWN = $1)
-
-#### Quick Start
-
-```bash
-# One command to start auto trading
-PRIVATE_KEY=0x... npx tsx scripts/dip-arb/auto-trade.ts
-```
-
-#### Features
-
-| Feature | Description |
-|---------|-------------|
-| **Dip Detection** | Detects 15%+ price drops within 10s sliding window |
-| **Two-Leg Execution** | Leg1 (buy dip) + Leg2 (buy opposite when cost < target) |
-| **Auto-Rotate** | Automatically switches to next market when current ends |
-| **Background Redeem** | Waits for Oracle resolution (~5min) then redeems winning positions |
-| **WebSocket Reconnect** | Auto re-subscribes on disconnect |
-
-#### Programmatic Usage
-
-```typescript
-import { PolymarketSDK } from '@catalyst-team/poly-sdk';
-
-const sdk = new PolymarketSDK({ privateKey: '0x...' });
-
-// Configure strategy
-sdk.dipArb.updateConfig({
-  shares: 10,              // Shares per trade
-  sumTarget: 0.9,          // Leg2 triggers when cost ≤ 0.9 (11% profit)
-  dipThreshold: 0.15,      // 15% dip triggers Leg1
-  windowMinutes: 14,       // Trade window after round start
-  autoExecute: true,       // Auto-execute signals
-});
-
-// Listen to events
-sdk.dipArb.on('signal', (signal) => {
-  console.log(`${signal.type}: ${signal.side} @ ${signal.price}`);
-});
-
-sdk.dipArb.on('execution', (result) => {
-  console.log(`${result.leg} ${result.success ? '✅' : '❌'}`);
-});
-
-sdk.dipArb.on('roundComplete', (result) => {
-  console.log(`Profit: $${result.profit?.toFixed(2)}`);
-});
-
-// Find and start monitoring
-const market = await sdk.dipArb.findAndStart({
-  coin: 'ETH',
-  preferDuration: '15m',
-});
-
-// Enable auto-rotate with redemption
-sdk.dipArb.enableAutoRotate({
-  enabled: true,
-  underlyings: ['ETH'],
-  duration: '15m',
-  settleStrategy: 'redeem',
-  redeemWaitMinutes: 5,
-});
-
-// Get stats
-const stats = sdk.dipArb.getStats();
-console.log(`Signals: ${stats.signalsDetected}, L1: ${stats.leg1Filled}, L2: ${stats.leg2Filled}`);
-
-// Cleanup
-await sdk.dipArb.stop();
-sdk.stop();
-```
-
-#### Events
-
-| Event | Data | Description |
-|-------|------|-------------|
-| `started` | `DipArbMarketConfig` | Started monitoring market |
-| `stopped` | - | Stopped monitoring |
-| `newRound` | `{ roundId, upOpen, downOpen }` | New trading round |
-| `signal` | `DipArbSignalEvent` | Leg1/Leg2 signal detected |
-| `execution` | `DipArbExecutionResult` | Trade execution result |
-| `roundComplete` | `{ profit, profitRate }` | Round finished |
-| `rotate` | `{ reason, newMarket }` | Switched to new market |
-| `settled` | `{ success, amountReceived }` | Position redeemed |
-
-#### Scripts
-
-```bash
-# Auto trading (monitors + trades)
-PRIVATE_KEY=0x... npx tsx scripts/dip-arb/auto-trade.ts
-
-# Redeem ended positions
-PRIVATE_KEY=0x... npx tsx scripts/dip-arb/redeem-positions.ts
-```
-
----
-
-## Low-Level Clients
-
-For advanced users who need direct API access:
+高级用户可直接访问 API：
 
 ```typescript
 import {
-  DataApiClient,    // Positions, trades, leaderboard
-  GammaApiClient,   // Markets, events, search
-  SubgraphClient,   // On-chain data via Goldsky
-  CTFClient,        // CTF contract operations
-  BridgeClient,     // Cross-chain deposits
-  SwapService,      // DEX swaps on Polygon
+  DataApiClient,    // 持仓、交易、排行榜
+  GammaApiClient,   // 市场、事件、搜索
+  SubgraphClient,   // 通过 Goldsky 访问链上数据
+  CTFClient,        // CTF 合约操作
+  BridgeClient,     // 跨链充值
+  SwapService,      // Polygon DEX 交换
 } from '@catalyst-team/poly-sdk';
 
 // Data API
@@ -775,7 +651,7 @@ const markets = await sdk.gammaApi.searchMarkets({ query: 'bitcoin' });
 const trending = await sdk.gammaApi.getTrendingMarkets(10);
 const events = await sdk.gammaApi.getEvents({ limit: 20 });
 
-// Subgraph (on-chain data)
+// Subgraph（链上数据）
 const userPositions = await sdk.subgraph.getUserPositions(address);
 const isResolved = await sdk.subgraph.isConditionResolved(conditionId);
 const globalOI = await sdk.subgraph.getGlobalOpenInterest();
@@ -783,20 +659,20 @@ const globalOI = await sdk.subgraph.getGlobalOpenInterest();
 
 ---
 
-## Breaking Changes (v0.3.0)
+## 破坏性变更 (v0.3.0)
 
-### `UnifiedMarket.tokens` is now an Array
+### `UnifiedMarket.tokens` 现在是数组
 
-**Before (v0.2.x)**:
+**之前 (v0.2.x)**:
 ```typescript
-// Object with yes/no properties
+// 带 yes/no 属性的对象
 const yesPrice = market.tokens.yes.price;
 const noPrice = market.tokens.no.price;
 ```
 
-**After (v0.3.0)**:
+**之后 (v0.3.0)**:
 ```typescript
-// Array of MarketToken objects
+// MarketToken 对象数组
 const yesToken = market.tokens.find(t => t.outcome === 'Yes');
 const noToken = market.tokens.find(t => t.outcome === 'No');
 
@@ -804,80 +680,73 @@ const yesPrice = yesToken?.price;
 const noPrice = noToken?.price;
 ```
 
-### Migration Guide
+### 迁移指南
 
 ```typescript
-// Helper function for migration
+// 迁移辅助函数
 function getTokenPrice(market: UnifiedMarket, outcome: 'Yes' | 'No'): number {
   return market.tokens.find(t => t.outcome === outcome)?.price ?? 0;
 }
 
-// Usage
+// 使用
 const yesPrice = getTokenPrice(market, 'Yes');
 const noPrice = getTokenPrice(market, 'No');
 ```
 
-**Why the change?** The array format better supports multi-outcome markets and is more consistent with the Polymarket API response format.
+**为什么改变？** 数组格式更好地支持多结果市场，并且与 Polymarket API 响应格式更一致。
 
 ---
 
-## Examples
+## 示例
 
-Run examples with:
+运行示例：
 
 ```bash
-pnpm example:basic        # Basic usage
-pnpm example:smart-money  # Smart money analysis
-pnpm example:trading      # Trading orders
-pnpm example:realtime     # WebSocket feeds
-pnpm example:arb-service  # Arbitrage service
+pnpm example:basic        # 基础用法
+pnpm example:smart-money  # 聪明钱分析
+pnpm example:trading      # 交易订单
+pnpm example:realtime     # WebSocket 推送
+pnpm example:arb-service  # 套利服务
 ```
 
-| Example | Description |
-|---------|-------------|
-| [01-basic-usage.ts](examples/01-basic-usage.ts) | Get markets, orderbooks, detect arbitrage |
-| [02-smart-money.ts](examples/02-smart-money.ts) | Top traders, wallet profiles, smart scores |
-| [03-market-analysis.ts](examples/03-market-analysis.ts) | Market signals, volume analysis |
-| [04-kline-aggregation.ts](examples/04-kline-aggregation.ts) | Build OHLCV candles from trades |
-| [05-follow-wallet-strategy.ts](examples/05-follow-wallet-strategy.ts) | Track smart money, detect exits |
-| [06-services-demo.ts](examples/06-services-demo.ts) | All SDK services in action |
-| [07-realtime-websocket.ts](examples/07-realtime-websocket.ts) | Live price feeds, orderbook updates |
-| [08-trading-orders.ts](examples/08-trading-orders.ts) | GTC, GTD, FOK, FAK order types |
-| [09-rewards-tracking.ts](examples/09-rewards-tracking.ts) | Market maker incentives, earnings |
-| [10-ctf-operations.ts](examples/10-ctf-operations.ts) | Split, merge, redeem tokens |
-| [11-live-arbitrage-scan.ts](examples/11-live-arbitrage-scan.ts) | Scan markets for opportunities |
-| [12-trending-arb-monitor.ts](examples/12-trending-arb-monitor.ts) | Real-time trending monitor |
-| [13-arbitrage-service.ts](examples/13-arbitrage-service.ts) | Full arbitrage workflow |
-| [14-dip-arb-service.ts](examples/14-dip-arb-service.ts) | Dip arbitrage for 15m crypto |
-
-**DipArb Scripts** (in `scripts/dip-arb/`):
-| Script | Description |
-|--------|-------------|
-| [auto-trade.ts](scripts/dip-arb/auto-trade.ts) | One-click auto trading with rotation |
-| [redeem-positions.ts](scripts/dip-arb/redeem-positions.ts) | Redeem ended market positions |
+| 示例 | 描述 |
+|------|------|
+| [01-basic-usage.ts](examples/01-basic-usage.ts) | 获取市场、订单簿、检测套利 |
+| [02-smart-money.ts](examples/02-smart-money.ts) | 顶级交易者、钱包画像、聪明分数 |
+| [03-market-analysis.ts](examples/03-market-analysis.ts) | 市场信号、成交量分析 |
+| [04-kline-aggregation.ts](examples/04-kline-aggregation.ts) | 从成交构建 OHLCV 蜡烛图 |
+| [05-follow-wallet-strategy.ts](examples/05-follow-wallet-strategy.ts) | 跟踪聪明钱、检测退出 |
+| [06-services-demo.ts](examples/06-services-demo.ts) | 所有 SDK 服务实战 |
+| [07-realtime-websocket.ts](examples/07-realtime-websocket.ts) | 实时价格推送、订单簿更新 |
+| [08-trading-orders.ts](examples/08-trading-orders.ts) | GTC、GTD、FOK、FAK 订单类型 |
+| [09-rewards-tracking.ts](examples/09-rewards-tracking.ts) | 做市激励、收益 |
+| [10-ctf-operations.ts](examples/10-ctf-operations.ts) | Split、merge、redeem 代币 |
+| [11-live-arbitrage-scan.ts](examples/11-live-arbitrage-scan.ts) | 扫描市场寻找机会 |
+| [12-trending-arb-monitor.ts](examples/12-trending-arb-monitor.ts) | 实时热门监控 |
+| [13-arbitrage-service.ts](examples/13-arbitrage-service.ts) | 完整套利工作流程 |
 
 ---
 
-## API Reference
+## API 参考
 
-For detailed API documentation, see:
+详细 API 文档见：
 
-- [docs/00-design.md](docs/00-design.md) - Architecture design
-- [docs/02-API.md](docs/02-API.md) - Complete API reference
-- [docs/01-polymarket-orderbook-arbitrage.md](docs/01-polymarket-orderbook-arbitrage.md) - Orderbook mirror & arbitrage
+- [docs/00-design.md](docs/00-design.md) - 架构设计
+- [docs/02-API.md](docs/02-API.md) - 完整 API 参考
+- [docs/01-polymarket-orderbook-arbitrage.md](docs/01-polymarket-orderbook-arbitrage.md) - 订单簿镜像与套利
 
-### Type Exports
+### 类型导出
 
 ```typescript
 import type {
-  // Core types
+  // 核心类型
   UnifiedMarket,
   MarketToken,
   ProcessedOrderbook,
   ArbitrageOpportunity,
   EffectivePrices,
 
-  // Trading
+  // 交易
   Side,
   OrderType,
   Order,
@@ -885,7 +754,7 @@ import type {
   LimitOrderParams,
   MarketOrderParams,
 
-  // K-Lines
+  // K 线
   KLineInterval,
   KLineCandle,
   DualKLineData,
@@ -896,11 +765,11 @@ import type {
   BookUpdate,
   OrderbookSnapshot,
 
-  // Wallet
+  // 钱包
   WalletProfile,
   SellActivityResult,
 
-  // Smart Money
+  // 聪明钱
   SmartMoneyWallet,
   SmartMoneyTrade,
   AutoCopyTradingOptions,
@@ -912,33 +781,25 @@ import type {
   MergeResult,
   RedeemResult,
 
-  // Arbitrage
+  // 套利
   ArbitrageMarketConfig,
   ArbitrageServiceConfig,
   ScanResult,
   ClearPositionResult,
-
-  // DipArb
-  DipArbServiceConfig,
-  DipArbMarketConfig,
-  DipArbSignalEvent,
-  DipArbExecutionResult,
-  DipArbRoundState,
-  DipArbStats,
 } from '@catalyst-team/poly-sdk';
 ```
 
 ---
 
-## Dependencies
+## 依赖
 
-- `@polymarket/clob-client` - Official CLOB trading client
-- `@polymarket/real-time-data-client` - Official WebSocket client
-- `ethers@5` - Blockchain interactions
-- `bottleneck` - Rate limiting
+- `@polymarket/clob-client` - 官方 CLOB 交易客户端
+- `@polymarket/real-time-data-client` - 官方 WebSocket 客户端
+- `ethers@5` - 区块链交互
+- `bottleneck` - 速率限制
 
 ---
 
-## License
+## 许可证
 
 MIT

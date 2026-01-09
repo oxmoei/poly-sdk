@@ -12,59 +12,59 @@
 import { PolymarketSDK } from '../src/index.js';
 
 async function main() {
-  console.log('=== Polymarket SDK Basic Usage ===\n');
+  console.log('=== Polymarket SDK 基础用法示例 ===\n');
 
   const sdk = new PolymarketSDK();
 
   // 1. Get trending markets
-  console.log('1. Fetching trending markets...');
+  console.log('1. 正在获取热门市场...');
   const trendingMarkets = await sdk.gammaApi.getTrendingMarkets(5);
-  console.log(`   Found ${trendingMarkets.length} trending markets:\n`);
+  console.log(`   找到 ${trendingMarkets.length} 个热门市场:\n`);
 
   for (const market of trendingMarkets) {
     console.log(`   - ${market.question}`);
-    console.log(`     Slug: ${market.slug}`);
-    console.log(`     Volume: $${market.volume.toLocaleString()}`);
-    console.log(`     24h Volume: $${market.volume24hr?.toLocaleString() || 'N/A'}`);
-    console.log(`     Prices: Yes=${market.outcomePrices[0]?.toFixed(2)}, No=${market.outcomePrices[1]?.toFixed(2)}`);
+    console.log(`     标识: ${market.slug}`);
+    console.log(`     总交易量: $${market.volume.toLocaleString()}`);
+    console.log(`     24小时交易量: $${market.volume24hr?.toLocaleString() || 'N/A'}`);
+    console.log(`     价格: 是=${market.outcomePrices[0]?.toFixed(2)}, 否=${market.outcomePrices[1]?.toFixed(2)}`);
     console.log('');
   }
 
   // 2. Get unified market details (Gamma + CLOB merged)
   if (trendingMarkets.length > 0) {
     const firstMarket = trendingMarkets[0];
-    console.log(`2. Getting unified market details for: ${firstMarket.slug}`);
+    console.log(`2. 正在获取统一市场详情: ${firstMarket.slug}`);
     const unifiedMarket = await sdk.getMarket(firstMarket.slug);
-    console.log(`   Question: ${unifiedMarket.question}`);
-    console.log(`   Condition ID: ${unifiedMarket.conditionId}`);
+    console.log(`   问题: ${unifiedMarket.question}`);
+    console.log(`   条件 ID: ${unifiedMarket.conditionId}`);
     const yesToken = unifiedMarket.tokens.find(t => t.outcome === 'Yes');
     const noToken = unifiedMarket.tokens.find(t => t.outcome === 'No');
-    console.log(`   YES Token ID: ${yesToken?.tokenId}`);
-    console.log(`   NO Token ID: ${noToken?.tokenId}`);
-    console.log(`   YES Price: ${yesToken?.price.toFixed(4)}`);
-    console.log(`   NO Price: ${noToken?.price.toFixed(4)}`);
-    console.log(`   Source: ${unifiedMarket.source}`);
+    console.log(`   是 代币 ID: ${yesToken?.tokenId}`);
+    console.log(`   否 代币 ID: ${noToken?.tokenId}`);
+    console.log(`   是 价格: ${yesToken?.price.toFixed(4)}`);
+    console.log(`   否 价格: ${noToken?.price.toFixed(4)}`);
+    console.log(`   数据源: ${unifiedMarket.source}`);
     console.log('');
 
     // 3. Get orderbook
-    console.log('3. Getting orderbook...');
+    console.log('3. 正在获取订单簿...');
     const orderbook = await sdk.getOrderbook(unifiedMarket.conditionId);
-    console.log(`   YES Best Bid: ${orderbook.yes.bid.toFixed(4)} (size: ${orderbook.yes.bidSize.toFixed(2)})`);
-    console.log(`   YES Best Ask: ${orderbook.yes.ask.toFixed(4)} (size: ${orderbook.yes.askSize.toFixed(2)})`);
-    console.log(`   YES Spread: ${(orderbook.yes.spread * 100).toFixed(2)}%`);
+    console.log(`   是 最佳买价: ${orderbook.yes.bid.toFixed(4)} (数量: ${orderbook.yes.bidSize.toFixed(2)})`);
+    console.log(`   是 最佳卖价: ${orderbook.yes.ask.toFixed(4)} (数量: ${orderbook.yes.askSize.toFixed(2)})`);
+    console.log(`   是 价差: ${(orderbook.yes.spread * 100).toFixed(2)}%`);
     console.log('');
-    console.log(`   NO Best Bid: ${orderbook.no.bid.toFixed(4)} (size: ${orderbook.no.bidSize.toFixed(2)})`);
-    console.log(`   NO Best Ask: ${orderbook.no.ask.toFixed(4)} (size: ${orderbook.no.askSize.toFixed(2)})`);
-    console.log(`   NO Spread: ${(orderbook.no.spread * 100).toFixed(2)}%`);
+    console.log(`   否 最佳买价: ${orderbook.no.bid.toFixed(4)} (数量: ${orderbook.no.bidSize.toFixed(2)})`);
+    console.log(`   否 最佳卖价: ${orderbook.no.ask.toFixed(4)} (数量: ${orderbook.no.askSize.toFixed(2)})`);
+    console.log(`   否 价差: ${(orderbook.no.spread * 100).toFixed(2)}%`);
     console.log('');
-    console.log(`   Ask Sum (YES+NO): ${orderbook.summary.askSum.toFixed(4)}`);
-    console.log(`   Bid Sum (YES+NO): ${orderbook.summary.bidSum.toFixed(4)}`);
-    console.log(`   Long Arb Profit: ${(orderbook.summary.longArbProfit * 100).toFixed(3)}%`);
-    console.log(`   Short Arb Profit: ${(orderbook.summary.shortArbProfit * 100).toFixed(3)}%`);
-    console.log(`   Imbalance Ratio: ${orderbook.summary.imbalanceRatio.toFixed(2)}`);
+    console.log(`   卖单总和 (是+否): ${orderbook.summary.askSum.toFixed(4)}`);
+    console.log(`   买单总和 (是+否): ${orderbook.summary.bidSum.toFixed(4)}`);
+    console.log(`   多头套利利润: ${(orderbook.summary.longArbProfit * 100).toFixed(3)}%`);
+    console.log(`   空头套利利润: ${(orderbook.summary.shortArbProfit * 100).toFixed(3)}%`);
+    console.log(`   不平衡比率: ${orderbook.summary.imbalanceRatio.toFixed(2)}`);
   }
 
-  console.log('\n=== Done ===');
+  console.log('\n=== 完成 ===');
 }
 
 main().catch(console.error);

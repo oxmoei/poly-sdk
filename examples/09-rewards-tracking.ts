@@ -22,7 +22,7 @@ import {
 const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || '0xYOUR_PRIVATE_KEY_HERE';
 
 async function main() {
-  console.log('=== Polymarket Rewards Tracking (TradingService) ===\n');
+  console.log('=== Polymarket 奖励追踪 (TradingService) ===\n');
 
   const sdk = new PolymarketSDK();
   const rateLimiter = new RateLimiter();

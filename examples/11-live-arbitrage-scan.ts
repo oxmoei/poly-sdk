@@ -17,8 +17,8 @@
 import { PolymarketSDK, checkArbitrage } from '../src/index.js';
 
 async function main() {
-  console.log('=== Live Arbitrage Market Scan ===\n');
-  console.log('Scanning real Polymarket markets for arbitrage opportunities...\n');
+  console.log('=== 实时套利市场扫描 ===\n');
+  console.log('正在扫描真实的 Polymarket 市场以寻找套利机会...\n');
 
   // Initialize SDK (no credentials needed for read operations)
   const sdk = new PolymarketSDK();
