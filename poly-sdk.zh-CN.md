@@ -5,9 +5,7 @@
 
 **Polymarket 统一 TypeScript SDK** - 交易、市场数据、聪明钱分析和链上操作。
 
-**开发者**: [@hhhx402](https://x.com/hhhx402) | **项目**: [Catalyst.fun](https://x.com/catalystdotfun)
-
-☕ **请我喝杯咖啡 (Polygon):** `0x58d2ff253998bc2f3b8f5bdbe9c52cad7b022739`
+☕ **请我喝杯咖啡 (EVM):** `0xd9c5d6111983ea3692f1d29bec4ac7d6f723217a`
 
 [English](README.md)
 
