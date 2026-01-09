@@ -6,14 +6,6 @@
  * 使用方法: npx tsx list-commands.ts [examples|scripts|all]
  */
 
-// 类型定义
-declare const process: {
-  argv: string[];
-};
-
-declare const console: {
-  log(...args: any[]): void;
-};
 interface ScriptCommand {
   file: string;
   description: string;
@@ -467,8 +459,9 @@ const printQuickReference = () => {
 
 // 主函数
 const main = () => {
-  // 获取命令行参数
-  const args = process.argv.slice(2);
+  // 获取命令行参数（通过 globalThis 访问以兼容无 Node 类型定义的环境）
+  const nodeProcess = (globalThis as any).process as { argv?: string[] } | undefined;
+  const args = nodeProcess?.argv?.slice(2) ?? [];
   const mode = args[0] || 'all';
 
   // 打印头部
