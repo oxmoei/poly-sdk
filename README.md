@@ -117,6 +117,9 @@ git clone https://github.com/oxmoei/poly-sdk.git
 
 # Enter project directory
 cd poly-sdk
+
+# (Optional) If you need to switch to the English branch, execute the following command.
+git checkout EN
 ```
 
 ---
