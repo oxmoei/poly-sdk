@@ -1024,11 +1024,18 @@ POLYMARKET_PRIVATE_KEY=0x你的私钥 npx tsx scripts/xxx/script.ts
 - 查看各子目录的 README（如 `scripts/dip-arb/README.md`）
 - 查看脚本文件中的注释
 
+### Q15: 网络超时错误，无法连接到 PolyMarket
+
+**A**: 
+- 检查网络连接是否正常
+- 确认已“科学上网”（能够连接外网）
+- 确认已开启 tun 模式
+
 ---
 
 ## 📖 更多资源
 
-- **完整文档**: 查看 [README.md](README.md) 或 [README.zh-CN.md](README.zh-CN.md)
+- **完整文档**: 查看 [README.md](README.md) 或 [README-EN.md](README.zh-CN.md)
 - **API 参考**: 查看 [docs/02-API.md](docs/02-API.md)
 - **架构设计**: 查看 [docs/00-design.md](docs/00-design.md)
 - **套利说明**: 查看 [docs/01-polymarket-orderbook-arbitrage.md](docs/01-polymarket-orderbook-arbitrage.md)
