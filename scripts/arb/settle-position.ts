@@ -19,7 +19,12 @@
  *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/v2/settle-position.ts --merge --market bo3
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import { CTFClient } from '../../src/index.js';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 // ============== Market Configurations ==============
 const MARKETS = {

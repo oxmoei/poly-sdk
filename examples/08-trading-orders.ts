@@ -13,6 +13,8 @@
  * Uncomment the order sections to test with real funds.
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import {
   TradingService,
   RateLimiter,
@@ -25,6 +27,9 @@ import {
   createUnifiedCache,
   type TickSize,
 } from '../src/index.js';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 // Test wallet private key (empty wallet for safety)
 const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || '0xYOUR_PRIVATE_KEY_HERE';

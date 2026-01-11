@@ -36,7 +36,7 @@
 
 ## 概览
 
-`@catalyst-team/poly-sdk` 是一个全面的 TypeScript SDK，提供：
+`poly-sdk` 是一个全面的 TypeScript SDK，提供：
 
 - **交易** - 下限价单/市价单 (GTC, GTD, FOK, FAK)
 - **市场数据** - 实时价格、订单簿、K线、历史成交

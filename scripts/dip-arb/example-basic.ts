@@ -27,7 +27,12 @@
  *   npx tsx examples/14-dip-arb-service.ts --auto-rotate
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import { PolymarketSDK } from '../../src/index.js';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 // Parse arguments
 const args = process.argv.slice(2);

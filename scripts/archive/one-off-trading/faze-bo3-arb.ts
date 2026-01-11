@@ -13,6 +13,8 @@
  *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/v2/faze-bo3-arb.ts --auto-execute --threshold 0.003
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import {
     RealtimeServiceV2,
     CTFClient,
@@ -21,6 +23,9 @@ import {
     createUnifiedCache,
     type TokenIds,
   } from '../../src/index.js';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
   
   // ═══════════════════════════════════════════════════════════════════════════════
   // MARKET CONFIGURATION - FaZe vs Passion UA BO3 Match Winner

@@ -8,10 +8,14 @@
  *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/trading/test-order.ts
  */
 
+import { config } from 'dotenv';
 import { TradingService, RateLimiter, createUnifiedCache } from '../../src/index.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

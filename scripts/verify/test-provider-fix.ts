@@ -3,7 +3,12 @@
  * This script tests that the provider initialization works correctly
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import { ethers } from 'ethers';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 // Test that signer without provider works after fix
 async function testProviderFix() {

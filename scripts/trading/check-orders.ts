@@ -2,7 +2,12 @@
  * 检查 Polymarket 真实订单
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import { TradingService, RateLimiter, createUnifiedCache } from '../../src/index.js';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 async function main() {
   const privateKey = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVKEY || process.env.PRIVATE_KEY;

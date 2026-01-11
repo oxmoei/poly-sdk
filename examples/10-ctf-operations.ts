@@ -34,6 +34,8 @@
  * - POLYGON_RPC_URL: (optional) Custom RPC URL
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import {
   CTFClient,
   PolymarketSDK,
@@ -43,6 +45,9 @@ import {
   formatUSDC,
   checkArbitrage,
 } from '../src/index.js';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 // Configuration
 const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || '0xYOUR_PRIVATE_KEY_HERE';

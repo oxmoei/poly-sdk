@@ -39,7 +39,7 @@
 
 ## Overview
 
-`@catalyst-team/poly-sdk` is a comprehensive TypeScript SDK that provides:
+`poly-sdk` is a comprehensive TypeScript SDK that provides:
 
 - **Trading** - Place limit/market orders (GTC, GTD, FOK, FAK)
 - **Market Data** - Real-time prices, orderbooks, K-lines, historical trades

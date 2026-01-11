@@ -1,6 +1,6 @@
 # 使用指南
 
-> **Polymarket TypeScript SDK** - 预测市场交易、聪明钱分析和市场数据的完整解决方案。 ➡️[关于poly-sdk](./poly-sdk.md)
+> **Polymarket TypeScript SDK** - Polymarket TypeScript SDK - 预测市场交易、聪明钱分析和市场数据的完整解决方案。 ➡️[关于poly-sdk](./poly-sdk.md)
 
 [![npm version](https://img.shields.io/npm/v/@catalyst-team/poly-sdk.svg)](https://www.npmjs.com/package/@catalyst-team/poly-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

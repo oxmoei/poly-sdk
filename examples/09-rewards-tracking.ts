@@ -10,6 +10,8 @@
  * NOTE: Requires a wallet with trading history to see earnings.
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import {
   TradingService,
   RateLimiter,
@@ -17,6 +19,9 @@ import {
   formatUSDC,
   createUnifiedCache,
 } from '../src/index.js';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 // Test wallet private key
 const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || '0xYOUR_PRIVATE_KEY_HERE';

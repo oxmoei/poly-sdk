@@ -6,8 +6,13 @@
  * 使用方法: npx tsx cli.ts
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import { spawn } from 'child_process';
 import * as readline from 'readline';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 // 从 list-commands.ts 导入数据（简化版，直接定义）
 interface Example {
@@ -190,6 +195,9 @@ const executeCommand = (command: string, args: string[] = []) => {
     const child = spawn('npx', ['tsx', command, ...args], {
       stdio: 'inherit',
       shell: false, // 移除 shell: true 以避免安全警告
+      env: {
+        ...process.env, // 继承所有环境变量（包括从 .env 加载的）
+      },
     });
 
     child.on('close', (code: number | null) => {

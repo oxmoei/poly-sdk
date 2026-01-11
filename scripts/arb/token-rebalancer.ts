@@ -35,12 +35,17 @@
  *   --dry-run              Show what would happen without executing
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import {
     CTFClient,
     TradingService,
     RateLimiter,
     createUnifiedCache,
   } from '../../src/index.js';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
   
   // ============== Market Configuration ==============
   // Default: FaZe vs Passion UA - Map 2 Winner

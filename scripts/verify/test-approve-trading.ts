@@ -8,11 +8,13 @@
  *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/test-approve-trading.ts
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import { ethers } from 'ethers';
-import dotenv from 'dotenv';
 import { AuthorizationService } from '../src/index.js';
 
-dotenv.config();
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVATE_KEY || process.env.PRIVATE_KEY;
 

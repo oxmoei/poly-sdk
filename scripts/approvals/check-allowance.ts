@@ -9,7 +9,12 @@
  *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/check-allowance.ts approve
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import { TradingService, RateLimiter, createUnifiedCache } from '../../src/index.js';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVKEY || '';
 

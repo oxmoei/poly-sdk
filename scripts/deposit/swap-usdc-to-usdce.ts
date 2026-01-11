@@ -28,8 +28,13 @@
  * - QuickSwap Router V3:   0xf5b509bB0909a69B1c207E495f687a596C168E12
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import { ethers, Contract, Wallet } from 'ethers';
 import { BridgeClient, BRIDGE_TOKENS } from '../src/clients/bridge-client.js';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 // Configuration
 const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || '';

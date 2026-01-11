@@ -11,8 +11,13 @@
  *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/verify-wallet-tools.ts
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import { Wallet, providers } from 'ethers';
 import { BridgeClient, AuthorizationService } from '../src/index.js';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVKEY || process.env.POLY_PRIVATE_KEY;
 const RPC_URL = 'https://polygon-rpc.com';

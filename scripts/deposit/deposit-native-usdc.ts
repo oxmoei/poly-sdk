@@ -14,8 +14,13 @@
  *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/deposit-native-usdc.ts deposit 5.0
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import { providers, Wallet, Contract, utils } from 'ethers';
 import { BridgeClient, BRIDGE_TOKENS } from '../src/clients/bridge-client.js';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 // Configuration
 const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVKEY || '';

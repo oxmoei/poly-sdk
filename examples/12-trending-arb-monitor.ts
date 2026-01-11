@@ -39,11 +39,16 @@
  *   npx tsx examples/12-trending-arb-monitor.ts --max-cycles=100
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import { PolymarketSDK, checkArbitrage, getEffectivePrices } from '../src/index.js';
 import { logger } from './config/logger.js';
 import { configValidator } from './config/validator.js';
 import { withRetry } from './config/retry.js';
 import { metrics } from './config/metrics.js';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 // Configuration
 interface MonitorConfig {

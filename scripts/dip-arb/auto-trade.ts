@@ -17,9 +17,13 @@
  *   npx tsx scripts/dip-arb/auto-trade.ts --xrp
  */
 
+import { config } from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PolymarketSDK } from '../../src/index.js';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 // ========================================
 // Parse Command Line Arguments

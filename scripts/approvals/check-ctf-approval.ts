@@ -9,7 +9,12 @@
  *   POLYMARKET_PRIVATE_KEY=0x... npx tsx scripts/check-ctf-approval.ts approve
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import { ethers } from 'ethers';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.POLY_PRIVKEY || '';
 const RPC_URL = process.env.POLYGON_RPC_URL || 'https://polygon-mainnet.g.alchemy.com/v2/demo';

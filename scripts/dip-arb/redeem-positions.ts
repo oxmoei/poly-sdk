@@ -8,7 +8,12 @@
  *   npx tsx scripts/dip-arb/redeem-positions.ts
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import { PolymarketSDK, CTFClient } from '../../src/index.js';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 const PRIVATE_KEY = process.env.POLYMARKET_PRIVATE_KEY || process.env.PRIVATE_KEY;
 

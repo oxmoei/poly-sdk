@@ -34,12 +34,17 @@
  *   npx tsx examples/13-arbitrage-service.ts --duration=300
  */
 
+import { config } from 'dotenv';
+import path from 'path';
 import { ArbitrageService } from '../src/index.js';
 import { logger, LogLevel } from './config/logger.js';
 import { configValidator, type Config } from './config/validator.js';
 import { withRetry } from './config/retry.js';
 import { metrics } from './config/metrics.js';
 import { TradeLimiter } from './config/trade-limiter.js';
+
+// Load .env from package root
+config({ path: path.resolve(process.cwd(), '.env') });
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -49,7 +54,7 @@ const RUN_DURATION = parseInt(
 ) * 1000;
 
 // Initialize configuration
-let config: Config;
+let appConfig: Config;
 let tradeLimiter: TradeLimiter;
 let arbService: ArbitrageService | null = null;
 
@@ -58,7 +63,7 @@ async function initialize(): Promise<void> {
 
   try {
     // Validate configuration
-    config = configValidator.validateConfig(
+    appConfig = configValidator.validateConfig(
       {
         privateKey: process.env.POLYMARKET_PRIVATE_KEY,
         rpcUrl: process.env.POLYGON_RPC_URL,
@@ -74,34 +79,34 @@ async function initialize(): Promise<void> {
     );
 
     logger.info('Configuration validated', {
-      profitThreshold: `${(config.profitThreshold * 100).toFixed(2)}%`,
-      minTradeSize: `$${config.minTradeSize}`,
-      maxTradeSize: `$${config.maxTradeSize}`,
-      dailyLimit: `$${config.dailyTradeLimit}`,
-      scanInterval: `${config.scanIntervalMs}ms`,
-      enableTrading: config.enableTrading,
+      profitThreshold: `${(appConfig.profitThreshold * 100).toFixed(2)}%`,
+      minTradeSize: `$${appConfig.minTradeSize}`,
+      maxTradeSize: `$${appConfig.maxTradeSize}`,
+      dailyLimit: `$${appConfig.dailyTradeLimit}`,
+      scanInterval: `${appConfig.scanIntervalMs}ms`,
+      enableTrading: appConfig.enableTrading,
     });
 
     // Initialize trade limiter
     tradeLimiter = new TradeLimiter({
-      dailyLimit: config.dailyTradeLimit,
-      perTradeLimit: config.maxTradeSize,
-      minTradeSize: config.minTradeSize,
-      maxTradeSize: config.maxTradeSize,
-      minBalance: config.minTradeSize * 2, // Require at least 2x min trade size
+      dailyLimit: appConfig.dailyTradeLimit,
+      perTradeLimit: appConfig.maxTradeSize,
+      minTradeSize: appConfig.minTradeSize,
+      maxTradeSize: appConfig.maxTradeSize,
+      minBalance: appConfig.minTradeSize * 2, // Require at least 2x min trade size
     });
 
     // Initialize ArbitrageService
     arbService = new ArbitrageService({
-      privateKey: config.privateKey,
-      profitThreshold: config.profitThreshold,
-      minTradeSize: config.minTradeSize,
-      maxTradeSize: config.maxTradeSize,
-      autoExecute: config.enableTrading,
+      privateKey: appConfig.privateKey,
+      profitThreshold: appConfig.profitThreshold,
+      minTradeSize: appConfig.minTradeSize,
+      maxTradeSize: appConfig.maxTradeSize,
+      autoExecute: appConfig.enableTrading,
     enableLogging: true,
 
     // Rebalancer config
-      enableRebalancer: config.enableTrading,
+      enableRebalancer: appConfig.enableTrading,
     minUsdcRatio: 0.2,
     maxUsdcRatio: 0.8,
     targetUsdcRatio: 0.5,
@@ -152,7 +157,7 @@ function setupEventListeners(): void {
       metrics.observe('trade_execution_time', result.executionTimeMs);
       
       // Record trade in limiter
-      if (config.enableTrading) {
+      if (appConfig.enableTrading) {
         tradeLimiter.recordTrade(result.size);
       }
     } else {
@@ -204,7 +209,7 @@ async function scanMarkets(): Promise<any[]> {
 
   const scanResults = await withRetry(
     () => arbService!.scanMarkets(
-      { minVolume24h: 5000, limit: config.maxMarkets },
+      { minVolume24h: 5000, limit: appConfig.maxMarkets },
       0.003 // 0.3% min profit for scanning
     ),
     { maxRetries: 3, initialDelayMs: 2000 },
