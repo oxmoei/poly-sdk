@@ -105,9 +105,9 @@ poly-sdk/
 
 ---
 
-## 🚀安装指南
+## 🚀 安装指南
 
-### 1️⃣克隆项目
+### 1️⃣ 克隆项目
 （确保你已安装 `git`，如果未安装请参考➡️[安装git教程](./安装git教程.md)）
 
 ```bash
@@ -120,7 +120,7 @@ cd poly-sdk
 
 ---
 
-### 2️⃣快速安装（自动化脚本）
+### 2️⃣ 快速安装（自动化脚本）
 
 一键检查并安装缺失的前置依赖。
 - ✅ 安装系统依赖
@@ -129,14 +129,14 @@ cd poly-sdk
 - ✅ 自动应用环境变量配置
 - ✅ 验证安装结果
 
-#### 📌Linux / macOS / WSL 用户
+#### 📌 Linux / macOS / WSL 用户
 
 ```bash
 # 在项目根目录执行
 ./install.sh
 ```
 
-#### 📌Windows 用户
+#### 📌 Windows 用户
 
 ```powershell
 # 以管理员身份运行 PowerShell，然后在项目根目录执行
@@ -145,7 +145,7 @@ Set-ExecutionPolicy Bypass -Scope CurrentUser
 ```
 ---
 
-### 3️⃣安装项目依赖并构建项目
+### 3️⃣ 安装项目依赖并构建项目
 
 ```bash
 # 安装所有项目依赖
@@ -159,11 +159,20 @@ pnpm run build
 
 ---
 
-### 4️⃣配置环境变量
+### 4️⃣ 配置环境变量
+#### 📌 Linux / macOS / WSL 用户
 ```bash
 # 将 `.env.example` 文件重命名为 `.env`，并补充相应的环境变量
 mv .env.example .env && nano .env #编辑完成按 Ctrl+O 保存，Ctrl+X 退出
 ```
+#### 📌 Windows 用户
+
+```powershell
+# 将 `.env.example` 文件重命名为 `.env`，并补充相应的环境变量
+mv .env.example .env  #编辑完成保存、关闭
+notepad .env 
+```
+
 ---
 
 ## ❇️ 使用方法
