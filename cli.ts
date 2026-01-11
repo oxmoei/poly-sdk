@@ -192,9 +192,12 @@ const executeCommand = (command: string, args: string[] = []) => {
     console.log('\n' + info('执行命令: ') + bold(`npx tsx ${command} ${args.join(' ')}`));
     console.log(dim('─'.repeat(80)) + '\n');
 
-    const child = spawn('npx', ['tsx', command, ...args], {
+    // Windows 上需要使用 npx.cmd，其他系统使用 npx
+    const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+
+    const child = spawn(npxCommand, ['tsx', command, ...args], {
       stdio: 'inherit',
-      shell: false, // 移除 shell: true 以避免安全警告
+      shell: false,
       env: {
         ...process.env, // 继承所有环境变量（包括从 .env 加载的）
       },

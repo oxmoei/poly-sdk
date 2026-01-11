@@ -45,7 +45,10 @@ function runScript(scriptPath: string, args: string[] = []): Promise<BenchmarkRe
     console.log(`Running: ${name}`);
     console.log('='.repeat(60));
 
-    const child = spawn('npx', ['tsx', scriptPath, ...args], {
+    // Windows 上需要使用 npx.cmd，其他系统使用 npx
+    const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+
+    const child = spawn(npxCommand, ['tsx', scriptPath, ...args], {
       cwd: path.resolve(SCRIPT_DIR, '../..'),
       stdio: ['inherit', 'pipe', 'pipe'],
     });

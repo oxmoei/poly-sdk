@@ -160,13 +160,14 @@ pnpm run build
 ---
 
 ### 4️⃣ 配置环境变量
+
 #### 📌 Linux / macOS / WSL 用户
 ```bash
 # 将 `.env.example` 文件重命名为 `.env`，并补充相应的环境变量
 mv .env.example .env && nano .env #编辑完成按 Ctrl+O 保存，Ctrl+X 退出
 ```
-#### 📌 Windows 用户
 
+#### 📌 Windows 用户
 ```powershell
 # 将 `.env.example` 文件重命名为 `.env`，并补充相应的环境变量
 mv .env.example .env  #编辑完成保存、关闭
