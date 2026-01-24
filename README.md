@@ -110,7 +110,7 @@ poly-sdk/
 ### 1️⃣ 克隆项目
 （确保你已安装 `git`，如果未安装请参考➡️[安装git教程](./安装git教程.md)）
 
-```bash
+```
 # 克隆仓库
 git clone https://github.com/oxmoei/poly-sdk.git
 
@@ -147,7 +147,7 @@ Set-ExecutionPolicy Bypass -Scope CurrentUser
 
 ### 3️⃣ 安装项目依赖并构建项目
 
-```bash
+```
 # 安装所有项目依赖
 pnpm install
 
