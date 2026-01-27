@@ -132,7 +132,7 @@ cd poly-sdk
 #### 📌 Linux / macOS / WSL 用户
 
 ```bash
-# 在项目根目录执行
+# 自动识别所在系统来配置环境并安装所缺少的依赖
 ./install.sh
 ```
 
