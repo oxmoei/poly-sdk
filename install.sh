@@ -3,6 +3,26 @@
 # 检测操作系统类型
 OS_TYPE=$(uname -s)
 
+# 检查 sudo 权限
+check_sudo() {
+    if [ "$EUID" -eq 0 ]; then
+        # 已经是 root 用户
+        return 0
+    fi
+    
+    if ! sudo -n true 2>/dev/null; then
+        echo "⚠️  此操作需要管理员权限（sudo）"
+        echo "   请确保您有 sudo 权限，脚本将在需要时提示您输入密码"
+        echo ""
+        # 测试 sudo 权限
+        if ! sudo -v; then
+            echo "❌ 无法获取 sudo 权限，某些安装步骤可能失败"
+            return 1
+        fi
+    fi
+    return 0
+}
+
 # 检查包管理器和安装必需的包
 install_dependencies() {
     case $OS_TYPE in
@@ -33,7 +53,14 @@ install_dependencies() {
             fi
             
             if [ ! -z "$PACKAGES_TO_INSTALL" ]; then
+                echo "需要安装以下包: $PACKAGES_TO_INSTALL"
+                if ! check_sudo; then
+                    echo "❌ 权限检查失败，跳过包安装"
+                    return 1
+                fi
+                echo "正在更新包列表..."
                 sudo apt update
+                echo "正在安装: $PACKAGES_TO_INSTALL"
                 sudo apt install -y $PACKAGES_TO_INSTALL
             fi
             ;;
@@ -95,13 +122,48 @@ else
 fi
 
 # 确保 Node.js 和 npm 在 PATH 中（如果通过 nvm 安装）
-if [ -s "$NVM_DIR/nvm.sh" ]; then
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" || true
-    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" || true
-fi
+ensure_nodejs_available() {
+    export NVM_DIR="$HOME/.nvm"
+    
+    # 如果 node 命令已可用，直接返回
+    if command -v node &> /dev/null && command -v npm &> /dev/null; then
+        echo "✅ Node.js 和 npm 已可用: $(node --version), npm $(npm --version)"
+        return 0
+    fi
+    
+    # 尝试加载 nvm
+    if [ -s "$NVM_DIR/nvm.sh" ]; then
+        echo "正在加载 nvm 环境..."
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" || true
+        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" || true
+        
+        # 如果 nvm 已加载，尝试使用默认版本
+        if command -v nvm &> /dev/null; then
+            nvm use default 2>/dev/null || nvm use --lts 2>/dev/null || true
+        fi
+    fi
+    
+    # 验证 node 和 npm 是否可用
+    if command -v node &> /dev/null && command -v npm &> /dev/null; then
+        echo "✅ Node.js 和 npm 已加载: $(node --version), npm $(npm --version)"
+        return 0
+    else
+        echo "⚠️  警告: Node.js 或 npm 仍不可用，pnpm 安装可能失败"
+        echo "   请确保 nvm 已正确安装，或手动运行: source $NVM_DIR/nvm.sh"
+        return 1
+    fi
+}
+
+# 确保 Node.js 可用
+ensure_nodejs_available
 
 # 检查并安装 pnpm
 install_pnpm() {
+    # 在安装前再次确保 Node.js 可用
+    if ! ensure_nodejs_available; then
+        echo "❌ 无法确保 Node.js 可用，跳过 pnpm 安装"
+        return 1
+    fi
     if command -v pnpm &> /dev/null; then
         echo "pnpm 已安装: $(pnpm --version)"
         return 0
@@ -123,11 +185,18 @@ install_pnpm() {
     # 方法 2: 使用 npm 全局安装
     if command -v npm &> /dev/null; then
         echo "使用 npm 安装 pnpm..."
-        npm install -g pnpm || true
-        if command -v pnpm &> /dev/null; then
-            echo "pnpm 已通过 npm 安装完成: $(pnpm --version)"
-            return 0
+        # 再次确保 npm 可用
+        if ! ensure_nodejs_available; then
+            echo "⚠️  npm 不可用，跳过此安装方法"
+        else
+            npm install -g pnpm || true
+            if command -v pnpm &> /dev/null; then
+                echo "pnpm 已通过 npm 安装完成: $(pnpm --version)"
+                return 0
+            fi
         fi
+    else
+        echo "⚠️  npm 命令不可用，跳过 npm 安装方法"
     fi
     
     # 方法 3: 使用独立安装脚本（备用方案）
@@ -196,7 +265,14 @@ install_auto_backup() {
                 pipx ensurepath
                 ;;
             "Linux")
+                echo "需要安装 pipx，需要管理员权限"
+                if ! check_sudo; then
+                    echo "❌ 权限检查失败，跳过 pipx 安装"
+                    return 1
+                fi
+                echo "正在更新包列表..."
                 sudo apt update
+                echo "正在安装 pipx..."
                 sudo apt install -y pipx
                 pipx ensurepath
                 ;;
