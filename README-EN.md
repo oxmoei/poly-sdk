@@ -141,7 +141,7 @@ One-click check and installation of missing prerequisites.
 
 ```powershell
 # Run PowerShell as Administrator, then execute in project root directory
-Set-ExecutionPolicy Bypass -Scope CurrentUser
+Set-ExecutionPolicy Bypass -Scope CurrentUser -Force
 .\install.ps1
 ```
 ---
